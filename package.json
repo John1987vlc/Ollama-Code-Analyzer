@@ -2,6 +2,7 @@
     "name": "ollama-code-analyzer",
     "displayName": "Ollama Code Analyzer",
     "description": "Analiza tu código en tiempo real usando Ollama y modelos de IA locales",
+    "publisher": "ollama-code-analyzer-Gemma3n-Gitea",
     "version": "1.0.0",
     "engines": {
         "vscode": "^1.74.0"
