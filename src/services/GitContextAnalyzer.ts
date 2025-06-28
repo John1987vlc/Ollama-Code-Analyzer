@@ -1,28 +1,36 @@
 import * as vscode from 'vscode';
-import * as path from 'path';
 import { GiteaService, GiteaIssue, GiteaPullRequest, GiteaCommit } from './GiteaService';
 import { OllamaService } from './OllamaService';
+import { getRelativeFilePath } from '../utils/pathUtils';
+
+// --- Interfaces (sin cambios) ---
+export interface LLMCodeAnalysis {
+  analysis: string;
+  suggestions: string[];
+  risks: string[];
+  opportunities: string[];
+}
 
 export interface GitContext {
   recentCommits: GiteaCommit[];
   relatedIssues: GiteaIssue[];
   relatedPullRequests: GiteaPullRequest[];
-  fileHistory: {
-    totalCommits: number;
+  fileStats: {
+    totalCommitsInRepo: number;
     lastModified: string;
     mainContributors: string[];
   };
 }
 
 export interface EnhancedAnalysisResult {
-  codeAnalysis: string;
+  llmAnalysis: LLMCodeAnalysis;
   gitContext: GitContext;
-  contextualSuggestions: string[];
   relatedTasks: Array<{
     type: 'issue' | 'pr';
     id: number;
     title: string;
-    relevance: 'high' | 'medium' | 'low';
+    url: string;
+    relevance: 'high' | 'medium';
   }>;
 }
 
@@ -32,219 +40,180 @@ export class GitContextAnalyzer {
     private ollamaService: OllamaService
   ) {}
 
-  async analyzeFileWithGitContext(document: vscode.TextDocument): Promise<EnhancedAnalysisResult | null> {
+  /**
+   * Orquesta el análisis completo de un archivo, combinando el análisis de código
+   * con el contexto obtenido de Gitea.
+   */
+  async analyzeFileWithGitContext(
+    document: vscode.TextDocument,
+    modelOverride?: string
+  ): Promise<EnhancedAnalysisResult | null> {
     try {
-      const relativePath = this.getRelativeFilePath(document.uri);
+      // [MEJORA] Verificar si Gitea está configurado antes de hacer nada.
+      if (!await this.giteaService.isConfigured()) {
+        vscode.window.showInformationMessage('La configuración de Gitea está incompleta. Se realizará un análisis sin contexto Git.');
+        // Aquí podrías optar por devolver un análisis básico o simplemente null.
+        return null; 
+      }
+
+      const relativePath = getRelativeFilePath(document.uri);
       if (!relativePath) {
+        vscode.window.showWarningMessage('El archivo no parece estar en el espacio de trabajo actual.');
         return null;
       }
 
-      // Obtener contexto de Git
-      const gitContext = await this.getGitContext(relativePath);
-      
-      // Analizar código con contexto
-      const codeAnalysis = await this.analyzeCodeWithContext(document, gitContext);
-      
-      // Encontrar tareas relacionadas
-      const relatedTasks = await this.findRelatedTasks(relativePath, document.getText());
-      
-      // Generar sugerencias contextuales
-      const contextualSuggestions = await this.generateContextualSuggestions(
-        document.getText(),
-        gitContext,
-        document.languageId
-      );
+      // Obtener todo el contexto en paralelo para mayor eficiencia
+      const [gitContext, relatedTasks] = await Promise.all([
+        this.getGitContext(relativePath),
+        this.findRelatedTasks(relativePath),
+      ]);
+
+      if (!gitContext) return null;
+
+      const llmAnalysis = await this.analyzeCodeWithContext(document, gitContext, modelOverride);
+
+      if (!llmAnalysis) return null;
 
       return {
-        codeAnalysis,
+        llmAnalysis,
         gitContext,
-        contextualSuggestions,
-        relatedTasks
+        relatedTasks,
       };
     } catch (error) {
-      console.error('Error en análisis con contexto Git:', error);
+      console.error('Error durante el análisis contextual con Git:', error);
+      vscode.window.showErrorMessage(`Error en análisis contextual: ${error instanceof Error ? error.message : 'Error desconocido'}`);
       return null;
     }
   }
 
-  private async getGitContext(filePath: string): Promise<GitContext> {
+  /**
+   * Recopila el contexto de Git para un archivo específico.
+   */
+  private async getGitContext(filePath: string): Promise<GitContext | null> {
+    // [CORRECCIÓN] Usar los nombres de método correctos del servicio Gitea
     const [recentCommits, relatedIssues, relatedPullRequests] = await Promise.all([
       this.giteaService.getCommitsForFile(filePath, 5),
-      this.giteaService.searchIssuesForFile(path.basename(filePath)),
-      this.giteaService.getPullRequests('all')
+      this.giteaService.searchIssues(filePath), 
+      this.giteaService.searchPullRequests(filePath)
     ]);
 
-    // Calcular estadísticas del archivo
     const contributors = recentCommits
       .map(commit => commit.author?.login || commit.commit.author.name)
-      .filter((author, index, self) => self.indexOf(author) === index);
+      .filter((author, index, self) => self.indexOf(author) === index && author);
 
-    const fileHistory = {
-      totalCommits: recentCommits.length,
-      lastModified: recentCommits[0]?.commit.author.date || '',
-      mainContributors: contributors.slice(0, 3)
+    const fileStats = {
+      totalCommitsInRepo: recentCommits.length,
+      lastModified: recentCommits[0]?.commit.author.date || 'N/A',
+      mainContributors: contributors.slice(0, 3),
     };
 
     return {
       recentCommits,
       relatedIssues,
-      relatedPullRequests: relatedPullRequests.filter(pr => 
-        pr.title.toLowerCase().includes(path.basename(filePath).toLowerCase()) ||
-        pr.body.toLowerCase().includes(path.basename(filePath).toLowerCase())
-      ),
-      fileHistory
+      relatedPullRequests,
+      fileStats,
     };
   }
 
-  private async analyzeCodeWithContext(document: vscode.TextDocument, gitContext: GitContext): Promise<string> {
+  /**
+   * Invoca al LLM con un prompt enriquecido para analizar el código.
+   */
+  private async analyzeCodeWithContext(
+    document: vscode.TextDocument,
+    gitContext: GitContext,
+    modelOverride?: string
+  ): Promise<LLMCodeAnalysis | null> {
+    const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer');
+    const model = modelOverride || config.get<string>('model', 'codellama');
+
     const recentChanges = gitContext.recentCommits
       .slice(0, 3)
-      .map(commit => `- ${commit.commit.message} (${commit.commit.author.name})`)
+      .map(commit => `- "${commit.commit.message.split('\n')[0]}" por ${commit.commit.author.name}`) // Tomar solo la primera línea del mensaje
       .join('\n');
+    
+    // [MEJORA] Formato de fecha seguro
+    const lastModifiedDate = gitContext.fileStats.lastModified !== 'N/A' 
+      ? new Date(gitContext.fileStats.lastModified).toLocaleDateString() 
+      : 'N/A';
 
-    const relatedIssues = gitContext.relatedIssues
-      .slice(0, 3)
-      .map(issue => `- #${issue.number}: ${issue.title}`)
-      .join('\n');
+    const prompt = `Eres un ingeniero de software senior experto en revisiones de código. Analiza el siguiente fragmento de código en el contexto de su historial de desarrollo.
 
-    const prompt = `Analiza el siguiente código considerando su contexto de desarrollo:
-
-CÓDIGO:
+**Código a Analizar (${document.languageId}):**
 \`\`\`${document.languageId}
 ${document.getText()}
 \`\`\`
 
-CONTEXTO DE GIT:
-Cambios recientes:
-${recentChanges || 'Sin cambios recientes'}
+**Contexto de Desarrollo (Gitea):**
+- **Últimos Cambios:**
+${recentChanges || '  - Sin commits recientes para este archivo.'}
+- **Issues y PRs Relacionados:**
+${gitContext.relatedIssues.length > 0 ? `  - ${gitContext.relatedIssues.length} issues encontrados.` : '  - No se encontraron issues directamente relacionados.'}
+${gitContext.relatedPullRequests.length > 0 ? `  - ${gitContext.relatedPullRequests.length} PRs encontrados.` : '  - No se encontraron PRs directamente relacionados.'}
+- **Estadísticas del Archivo:**
+  - Contribuidores Principales: ${gitContext.fileStats.mainContributors.join(', ') || 'N/A'}
+  - Última Modificación: ${lastModifiedDate}
 
-Issues relacionados:
-${relatedIssues || 'Sin issues relacionados'}
+**Tu Tarea:**
+Basado en el código y su contexto, proporciona un análisis estructurado. Considera lo siguiente:
+1.  **Calidad y Lógica:** Errores, bugs potenciales, "code smells".
+2.  **Consistencia Contextual:** ¿El código parece alineado con los mensajes de commit recientes? ¿Aborda alguno de los issues?
+3.  **Mantenibilidad y Riesgos:** ¿Hay deuda técnica? Si los commits recientes son "fixes", ¿hay riesgo de regresión? Sugiere añadir tests si es apropiado. Si el archivo cambia mucho, sugiere mejorar la documentación.
+4.  **Oportunidades de Mejora:** Refactorizaciones, optimizaciones o simplificaciones.
 
-Historial del archivo:
-- Total de commits: ${gitContext.fileHistory.totalCommits}
-- Última modificación: ${gitContext.fileHistory.lastModified}
-- Principales contribuidores: ${gitContext.fileHistory.mainContributors.join(', ')}
-
-Por favor, proporciona un análisis que considere:
-1. Calidad del código actual
-2. Consistencia con los cambios recientes
-3. Relación con las tareas pendientes
-4. Posibles mejoras basadas en el historial
-
-Responde en formato JSON:
+**Formato de Respuesta:**
+Responde únicamente con un objeto JSON válido, sin texto adicional antes o después.
 {
-  "analysis": "análisis_detallado",
-  "suggestions": ["sugerencia1", "sugerencia2"],
-  "risks": ["riesgo1", "riesgo2"],
-  "opportunities": ["oportunidad1", "oportunidad2"]
+  "analysis": "Un resumen detallado de la calidad del código en relación a su contexto.",
+  "suggestions": ["Sugerencia de mejora concreta y accionable.", "Otra sugerencia..."],
+  "risks": ["Riesgo potencial identificado.", "Otro riesgo..."],
+  "opportunities": ["Oportunidad de refactorización o mejora.", "Otra oportunidad..."]
 }`;
 
-    const response = await this.ollamaService.generate(prompt, 'codellama', {
-      temperature: 0.2,
-      top_p: 0.9
-    });
+    const rawResponse = await this.ollamaService.generate(prompt, model, { temperature: 0.2 });
+    if (!rawResponse?.response) {
+      throw new Error('Ollama no devolvió una respuesta.');
+    }
 
-    return response?.response || 'No se pudo obtener análisis contextual';
+    try {
+      const jsonMatch = rawResponse.response.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error('La respuesta de Ollama no contenía un JSON válido.');
+      
+      return JSON.parse(jsonMatch[0]) as LLMCodeAnalysis;
+    } catch (error) {
+      console.error('Error al parsear la respuesta JSON de Ollama:', error);
+      console.log('Respuesta recibida:', rawResponse.response);
+      throw new Error('No se pudo interpretar la respuesta del análisis de Ollama.');
+    }
   }
 
-  private async findRelatedTasks(filePath: string, code: string): Promise<Array<{
-    type: 'issue' | 'pr';
-    id: number;
-    title: string;
-    relevance: 'high' | 'medium' | 'low';
-  }>> {
-    const fileName = path.basename(filePath);
+  /**
+   * Utiliza métodos de búsqueda para encontrar issues y PRs relacionados de forma eficiente.
+   */
+  private async findRelatedTasks(filePath: string): Promise<EnhancedAnalysisResult['relatedTasks']> {
+    // [CORRECCIÓN] Usar los nombres de método correctos del servicio Gitea
     const [issues, pullRequests] = await Promise.all([
-      this.giteaService.getIssues('open'),
-      this.giteaService.getPullRequests('open')
+      this.giteaService.searchIssues(filePath, 'open'),
+      this.giteaService.searchPullRequests(filePath, 'open'),
     ]);
 
-    const relatedTasks = [];
+    const relatedTasks: EnhancedAnalysisResult['relatedTasks'] = [];
 
-    // Buscar issues relacionados
-    for (const issue of issues) {
-      let relevance: 'high' | 'medium' | 'low' = 'low';
-      
-      if (issue.title.toLowerCase().includes(fileName.toLowerCase()) ||
-          issue.body.toLowerCase().includes(fileName.toLowerCase())) {
-        relevance = 'high';
-      } else if (issue.body.toLowerCase().includes(path.dirname(filePath).toLowerCase())) {
-        relevance = 'medium';
-      }
+    issues.forEach(issue => relatedTasks.push({
+      type: 'issue',
+      id: issue.number,
+      title: issue.title,
+      url: issue.html_url,
+      relevance: 'high',
+    }));
 
-      if (relevance !== 'low') {
-        relatedTasks.push({
-          type: 'issue' as const,
-          id: issue.number,
-          title: issue.title,
-          relevance
-        });
-      }
-    }
+    pullRequests.forEach(pr => relatedTasks.push({
+      type: 'pr',
+      id: pr.number,
+      title: pr.title,
+      url: pr.html_url,
+      relevance: 'high',
+    }));
 
-    // Buscar PRs relacionados
-    for (const pr of pullRequests) {
-      let relevance: 'high' | 'medium' | 'low' = 'low';
-      
-      if (pr.title.toLowerCase().includes(fileName.toLowerCase()) ||
-          pr.body.toLowerCase().includes(fileName.toLowerCase())) {
-        relevance = 'high';
-      } else if (pr.body.toLowerCase().includes(path.dirname(filePath).toLowerCase())) {
-        relevance = 'medium';
-      }
-
-      if (relevance !== 'low') {
-        relatedTasks.push({
-          type: 'pr' as const,
-          id: pr.number,
-          title: pr.title,
-          relevance
-        });
-      }
-    }
-
-    return relatedTasks.sort((a, b) => {
-      const relevanceOrder = { high: 3, medium: 2, low: 1 };
-      return relevanceOrder[b.relevance] - relevanceOrder[a.relevance];
-    });
-  }
-
-  private async generateContextualSuggestions(
-    code: string,
-    gitContext: GitContext,
-    language: string
-  ): Promise<string[]> {
-    const suggestions = [];
-
-    // Sugerencias basadas en el historial
-    if (gitContext.fileHistory.totalCommits > 10) {
-      suggestions.push('Este archivo ha sido modificado frecuentemente. Considera añadir más documentación.');
-    }
-
-    if (gitContext.recentCommits.length > 0) {
-      const lastCommit = gitContext.recentCommits[0];
-      if (lastCommit.commit.message.toLowerCase().includes('fix') || 
-          lastCommit.commit.message.toLowerCase().includes('bug')) {
-        suggestions.push('Archivo con correcciones recientes. Considera añadir tests para prevenir regresiones.');
-      }
-    }
-
-    // Sugerencias basadas en issues
-    const openIssues = gitContext.relatedIssues.filter(issue => issue.state === 'open');
-    if (openIssues.length > 0) {
-      suggestions.push(`Hay ${openIssues.length} issue(s) abierto(s) relacionado(s) con este archivo.`);
-    }
-
-    return suggestions;
-  }
-
-  private getRelativeFilePath(uri: vscode.Uri): string | null {
-    const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri);
-    if (!workspaceFolder) {
-      return null;
-    }
-
-    return path.relative(workspaceFolder.uri.fsPath, uri.fsPath).replace(/\\/g, '/');
+    return relatedTasks;
   }
 }

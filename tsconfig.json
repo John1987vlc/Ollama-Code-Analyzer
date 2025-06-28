@@ -3,12 +3,11 @@
 		"module": "commonjs",
 		"target": "ES2022",
 		"outDir": "out",
-		"lib": [
-			"ES2022"
-		],
+		"lib": ["ESNext", "DOM"],
 		"sourceMap": true,
 		"rootDir": "src",
 		"strict": true,
+		 "types": ["mocha", "node"]
     
 		/* Additional Checks */
 		// "noImplicitReturns": true, /* Report error when not all code paths in function return a value. */

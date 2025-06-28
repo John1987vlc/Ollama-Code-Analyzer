@@ -1,5 +1,11 @@
 import * as vscode from 'vscode';
+import fetch from 'node-fetch';
 
+// --- INTERFACES MEJORADAS Y DOCUMENTADAS ---
+
+/**
+ * Configuración para la conexión con la instancia de Gitea.
+ */
 export interface GiteaConfig {
   baseUrl: string;
   token: string;
@@ -7,66 +13,56 @@ export interface GiteaConfig {
   repository?: string;
 }
 
+/**
+ * Representa un Issue de Gitea.
+ */
 export interface GiteaIssue {
   id: number;
   number: number;
   title: string;
   body: string;
   state: 'open' | 'closed';
+  html_url: string; // [AÑADIDO] URL visible en el navegador.
   created_at: string;
   updated_at: string;
-  user: {
-    login: string;
-    avatar_url: string;
-  };
-  labels: Array<{
-    name: string;
-    color: string;
-  }>;
-  assignees: Array<{
-    login: string;
-    avatar_url: string;
-  }>;
+  user: { login: string; avatar_url: string; };
+  labels: Array<{ name: string; color: string; }>;
+  assignees: Array<{ login: string; avatar_url: string; }>;
 }
 
+/**
+ * Representa un Pull Request de Gitea.
+ */
 export interface GiteaPullRequest {
   id: number;
   number: number;
   title: string;
   body: string;
   state: 'open' | 'closed' | 'merged';
+  html_url: string; // [AÑADIDO] URL visible en el navegador.
   created_at: string;
   updated_at: string;
-  user: {
-    login: string;
-    avatar_url: string;
-  };
-  head: {
-    ref: string;
-    sha: string;
-  };
-  base: {
-    ref: string;
-    sha: string;
-  };
+  user: { login: string; avatar_url: string; };
+  head: { ref: string; sha: string; };
+  base: { ref: string; sha: string; };
 }
 
+/**
+ * Representa un Commit de Gitea.
+ */
 export interface GiteaCommit {
   sha: string;
+  html_url: string;
   commit: {
     message: string;
-    author: {
-      name: string;
-      email: string;
-      date: string;
-    };
+    author: { name: string; email: string; date: string; };
   };
-  author: {
-    login: string;
-    avatar_url: string;
-  } | null;
+  author: { login: string; avatar_url: string; } | null;
 }
 
+/**
+ * Representa los cambios de un archivo en un commit específico.
+ */
 export interface FileChange {
   filename: string;
   status: 'added' | 'modified' | 'removed';
@@ -83,157 +79,175 @@ export class GiteaService {
   constructor() {
     this.outputChannel = vscode.window.createOutputChannel('Gitea Integration');
     this.config = this.loadConfig();
+    
+    // Listener para recargar la configuración si cambia
+    vscode.workspace.onDidChangeConfiguration(e => {
+        if (e.affectsConfiguration('ollamaCodeAnalyzer.gitea')) {
+            this.outputChannel.appendLine('Configuración de Gitea actualizada, recargando servicio...');
+            this.config = this.loadConfig();
+        }
+    });
   }
 
+  /**
+   * Carga la configuración desde los ajustes de VS Code.
+   */
   private loadConfig(): GiteaConfig {
     const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer.gitea');
     return {
-      baseUrl: config.get<string>('baseUrl', ''),
+      baseUrl: config.get<string>('baseUrl', '').replace(/\/$/, ''), // Eliminar barra final si existe
       token: config.get<string>('token', ''),
       organization: config.get<string>('organization', ''),
       repository: config.get<string>('repository', '')
     };
   }
 
+  /**
+   * Verifica si la configuración esencial (URL y token) está presente.
+   */
   async isConfigured(): Promise<boolean> {
-    this.config = this.loadConfig();
-    return !!(this.config.baseUrl && this.config.token);
+    return !!(this.config.baseUrl && this.config.token && this.config.organization && this.config.repository);
   }
 
-private async makeRequest<T>(endpoint: string, method: 'GET' | 'POST' = 'GET', body?: any): Promise<T | null> {
-  if (!await this.isConfigured()) {
-    vscode.window.showErrorMessage('Gitea no está configurado. Configure la URL base y token.');
-    return null;
-  }
-
-  try {
-    const url = `${this.config.baseUrl}/api/v1${endpoint}`;
-    const response = await fetch(url, {
-      method,
-      headers: {
-        'Authorization': `token ${this.config.token}`,
-        'Content-Type': 'application/json',
-      },
-      body: body ? JSON.stringify(body) : undefined,
-    });
-
-    if (!response.ok) {
-      throw new Error(`Gitea API error: ${response.status} ${response.statusText}`);
+  /**
+   * [MODIFICADO] Realiza una petición a la API de Gitea de forma centralizada y robusta.
+   */
+  private async makeRequest<T>(endpoint: string, method: 'GET' | 'POST' = 'GET', body?: any): Promise<T | null> {
+    if (!await this.isConfigured()) {
+        // No mostramos error aquí, el llamador decidirá.
+        return null; 
     }
 
-    const contentType = response.headers.get('content-type');
-    const text = await response.text();
+    try {
+        const url = `${this.config.baseUrl}/api/v1${endpoint}`;
+        this.outputChannel.appendLine(`Gitea Request: ${method} ${url}`);
+        
+        const response = await fetch(url, {
+            method,
+            headers: {
+                'Authorization': `token ${this.config.token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+            body: body ? JSON.stringify(body) : undefined,
+        });
 
-    if (contentType && contentType.includes('application/json')) {
-      return JSON.parse(text);
-    } else {
-      this.outputChannel.appendLine('La respuesta no es JSON. Texto devuelto: ' + text);
-      return null;
+        if (!response.ok) {
+            const errorBody = await response.text();
+            throw new Error(`[${response.status}] ${response.statusText}: ${errorBody}`);
+        }
+
+        // Maneja respuestas vacías (ej. 204 No Content)
+        if (response.status === 204) {
+            return null;
+        }
+
+        return await response.json() as T;
+
+    } catch (error) {
+        this.handleApiError(error);
+        return null;
     }
-  } catch (error) {
-    this.outputChannel.appendLine(`Error en solicitud a Gitea: ${error}`);
-    console.error('Gitea API error:', error);
-    return null;
   }
-}
 
-
-  private getRepoPath(): string {
+  /**
+   * [MODIFICADO] Obtiene la ruta del repositorio para las URLs de la API.
+   */
+  private getRepoPath(): string | null {
     const { organization, repository } = this.config;
     if (!organization || !repository) {
-      throw new Error('Organización y repositorio deben estar configurados');
-    }
-    return `${organization}/${repository}`;
-  }
-
-  async getIssues(state: 'open' | 'closed' | 'all' = 'open'): Promise<GiteaIssue[]> {
-    try {
-      const repoPath = this.getRepoPath();
-      const issues = await this.makeRequest<GiteaIssue[]>(`/repos/${repoPath}/issues?state=${state}`);
-      return issues || [];
-    } catch (error) {
-      this.outputChannel.appendLine(`Error obteniendo issues: ${error}`);
-      return [];
-    }
-  }
-
-  async getPullRequests(state: 'open' | 'closed' | 'all' = 'open'): Promise<GiteaPullRequest[]> {
-    try {
-      const repoPath = this.getRepoPath();
-      const prs = await this.makeRequest<GiteaPullRequest[]>(`/repos/${repoPath}/pulls?state=${state}`);
-      return prs || [];
-    } catch (error) {
-      this.outputChannel.appendLine(`Error obteniendo pull requests: ${error}`);
-      return [];
-    }
-  }
-
-  async getCommitsForFile(filePath: string, limit: number = 10): Promise<GiteaCommit[]> {
-    try {
-      const repoPath = this.getRepoPath();
-      const commits = await this.makeRequest<GiteaCommit[]>(`/repos/${repoPath}/commits?path=${encodeURIComponent(filePath)}&limit=${limit}`);
-      return commits || [];
-    } catch (error) {
-      this.outputChannel.appendLine(`Error obteniendo commits para ${filePath}: ${error}`);
-      return [];
-    }
-  }
-
-  async getFileChangesInCommit(sha: string): Promise<FileChange[]> {
-    try {
-      const repoPath = this.getRepoPath();
-      const commit = await this.makeRequest<{ files: FileChange[] }>(`/repos/${repoPath}/commits/${sha}`);
-      return commit?.files || [];
-    } catch (error) {
-      this.outputChannel.appendLine(`Error obteniendo cambios del commit ${sha}: ${error}`);
-      return [];
-    }
-  }
-
-  async searchIssuesForFile(filename: string): Promise<GiteaIssue[]> {
-    try {
-      const repoPath = this.getRepoPath();
-      const searchQuery = encodeURIComponent(`${filename} in:body`);
-      const issues = await this.makeRequest<GiteaIssue[]>(`/repos/${repoPath}/issues?q=${searchQuery}`);
-      return issues || [];
-    } catch (error) {
-      this.outputChannel.appendLine(`Error buscando issues para ${filename}: ${error}`);
-      return [];
-    }
-  }
-
-  async createIssue(title: string, body: string, labels?: string[]): Promise<GiteaIssue | null> {
-    try {
-      const repoPath = this.getRepoPath();
-      const issueData = {
-        title,
-        body,
-        labels: labels || []
-      };
-      
-      const issue = await this.makeRequest<GiteaIssue>(`/repos/${repoPath}/issues`, 'POST', issueData);
-      return issue;
-    } catch (error) {
-      this.outputChannel.appendLine(`Error creando issue: ${error}`);
+      // Este error debería ser prevenido por isConfigured, pero es una salvaguarda.
       return null;
     }
+    return `/repos/${organization}/${repository}`;
   }
-  async saveConfiguration(baseUrl: string, token: string, organization?: string, repository?: string): Promise<void> {
-  const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer.gitea');
+  
+  // --- MÉTODOS DE BÚSQUEDA EFICIENTES ---
 
-  await config.update('baseUrl', baseUrl, vscode.ConfigurationTarget.Global);
-  await config.update('token', token, vscode.ConfigurationTarget.Global);
-
-  if (organization !== undefined) {
-    await config.update('organization', organization, vscode.ConfigurationTarget.Global);
+  /**
+   * [NUEVO Y MEJORADO] Busca issues en el repositorio que coincidan con una query.
+   * @param query El término de búsqueda.
+   * @param state El estado de los issues a buscar.
+   */
+  async searchIssues(query: string, state: 'open' | 'closed' | 'all' = 'open'): Promise<GiteaIssue[]> {
+    const repoPath = this.getRepoPath();
+    if (!repoPath) return [];
+    
+    const searchQuery = encodeURIComponent(query);
+    const result = await this.makeRequest<{ok: boolean, data: GiteaIssue[]}>(`${repoPath}/issues/search?state=${state}&q=${searchQuery}`);
+    return result?.data || [];
   }
 
-  if (repository !== undefined) {
-    await config.update('repository', repository, vscode.ConfigurationTarget.Global);
+  /**
+   * [NUEVO] Busca Pull Requests en el repositorio que coincidan con una query.
+   * @param query El término de búsqueda.
+   * @param state El estado de los PRs a buscar.
+   */
+  async searchPullRequests(query: string, state: 'open' | 'closed' | 'all' = 'open'): Promise<GiteaPullRequest[]> {
+    const repoPath = this.getRepoPath();
+    if (!repoPath) return [];
+
+    const searchQuery = encodeURIComponent(query);
+    const result = await this.makeRequest<{ok: boolean, data: GiteaPullRequest[]}>(`${repoPath}/pulls/search?state=${state}&q=${searchQuery}`);
+    return result?.data || [];
   }
 
-  // Recarga la configuración interna
-  this.config = this.loadConfig();
-}
+  /**
+   * Obtiene los commits más recientes que han modificado un archivo específico.
+   * @param filePath Ruta del archivo relativa a la raíz del repositorio.
+   * @param limit Número máximo de commits a devolver.
+   */
+  async getCommitsForFile(filePath: string, limit: number = 10): Promise<GiteaCommit[]> {
+    const repoPath = this.getRepoPath();
+    if (!repoPath) return [];
 
+    const commits = await this.makeRequest<GiteaCommit[]>(`${repoPath}/commits?path=${encodeURIComponent(filePath)}&limit=${limit}`);
+    return commits || [];
+  }
+  
+  /**
+   * Crea un nuevo issue en el repositorio de Gitea.
+   */
+  async createIssue(title: string, body: string, labels?: string[]): Promise<GiteaIssue | null> {
+    const repoPath = this.getRepoPath();
+    if (!repoPath) return null;
+
+    const issueData = { title, body, labels: labels || [] };
+    return this.makeRequest<GiteaIssue>(`${repoPath}/issues`, 'POST', issueData);
+  }
+  
+  /**
+   * Guarda la configuración de Gitea en los ajustes de VS Code.
+   */
+  async saveConfiguration(baseUrl: string, token: string, organization: string, repository: string): Promise<void> {
+    const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer.gitea');
+    await Promise.all([
+        config.update('baseUrl', baseUrl, vscode.ConfigurationTarget.Global),
+        config.update('token', token, vscode.ConfigurationTarget.Global),
+        config.update('organization', organization, vscode.ConfigurationTarget.Global),
+        config.update('repository', repository, vscode.ConfigurationTarget.Global)
+    ]);
+    this.config = this.loadConfig(); // Recarga inmediata
+  }
+
+  /**
+   * [NUEVO] Centraliza el manejo de errores de la API para notificar al usuario.
+   */
+  private handleApiError(error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    this.outputChannel.appendLine(`Error en la API de Gitea: ${errorMessage}`);
+    console.error('Gitea API Error:', error);
+
+    // Muestra un mensaje no intrusivo al usuario.
+    vscode.window.showErrorMessage(`Gitea: ${errorMessage}`, { modal: false });
+  }
+ async testConnection(): Promise<boolean> {
+    try {
+      // Llamamos a un endpoint que requiere autenticación pero es ligero, como obtener el usuario.
+      const user = await this.makeRequest<any>('/user');
+      return user !== null;
+    } catch (error) {
+      return false;
+    }
+  }
 }

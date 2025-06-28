@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import fetch from 'node-fetch';
+import { Readable } from 'stream';
 
 export interface OllamaModel {
   name: string;
@@ -120,7 +122,9 @@ export class OllamaService {
         },
         body: JSON.stringify({
           model: model,
-          prompt: prompt,
+          messages: [
+          { role: "user", content: prompt }
+        ],
           stream: false, // Es crucial para recibir una única respuesta JSON
           ...options,
         }),
@@ -163,73 +167,84 @@ export class OllamaService {
   /**
    * Genera texto con streaming (para respuestas en tiempo real)
    */
-  async generateStream(
-    prompt: string, 
-    model: string, 
-    options: OllamaGenerateOptions = {},
-    onChunk?: (chunk: string) => void
-  ): Promise<string> {
-    try {
-      const response = await fetch(`${this.baseUrl}/api/generate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: model,
-          prompt: prompt,
-          stream: true,
-          ...options,
-        }),
-      });
+  
+async generateStream(
+  prompt: string,
+  model: string,
+  options: OllamaGenerateOptions = {},
+  onChunk?: (chunk: string) => void
+): Promise<string> {
+  try {
+    const response = await fetch(`${this.baseUrl}/api/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: "user", content: prompt }
+        ],
+        stream: true,
+        ...options,
+      }),
+    });
 
-      if (!response.ok) {
-        throw new Error(`Error de la API de Ollama: ${response.statusText}`);
-      }
+    if (!response.ok) {
+      throw new Error(`Error de la API de Ollama: ${response.statusText}`);
+    }
 
-      let fullResponse = '';
-      const reader = response.body?.getReader();
-      
-      if (!reader) {
-        throw new Error('No se pudo leer la respuesta');
-      }
+    if (!response.body) {
+      throw new Error('No se pudo leer la respuesta');
+    }
 
-      while (true) {
-        const { done, value } = await reader.read();
-        
-        if (done) break;
-        
-        const chunk = new TextDecoder().decode(value);
-        const lines = chunk.split('\n').filter(line => line.trim());
-        
-        for (const line of lines) {
-          try {
-            const rawData: unknown = JSON.parse(line);
-            
-            // Validar que tenga la estructura básica esperada
-            if (typeof rawData === 'object' && rawData !== null) {
-              const data = rawData as any;
-              if (data.response && typeof data.response === 'string') {
-                fullResponse += data.response;
-                onChunk?.(data.response);
-              }
-              if (data.done === true) {
-                return fullResponse;
-              }
-            }
-          } catch (parseError) {
-            // Ignorar líneas que no sean JSON válido
+    const reader = response.body as Readable;
+    const decoder = new TextDecoder();
+    let fullResponse = '';
+    let buffer = '';
+
+    for await (const chunkBuffer of reader) {
+      buffer += decoder.decode(chunkBuffer, { stream: true });
+
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (!line.trim()) {continue;}
+        try {
+          const data = JSON.parse(line);
+          if (data?.response && typeof data.response === 'string') {
+            fullResponse += data.response;
+            onChunk?.(data.response);
           }
+          if (data?.done === true) {
+            return fullResponse;
+          }
+        } catch {
+          // Ignorar error JSON
         }
       }
-
-      return fullResponse;
-    } catch (error) {
-      console.error('Error en generateStream:', error);
-      vscode.window.showErrorMessage('Error al generar respuesta con streaming');
-      return '';
     }
+
+    // Procesar restos en buffer
+    if (buffer.trim()) {
+      try {
+        const data = JSON.parse(buffer);
+        if (data?.response && typeof data.response === 'string') {
+          fullResponse += data.response;
+          onChunk?.(data.response);
+        }
+      } catch {}
+    }
+
+    return fullResponse;
+
+  } catch (error) {
+    console.error('Error en generateStream:', error);
+    vscode.window.showErrorMessage('Error al generar respuesta con streaming');
+    return '';
   }
+}
 
   /**
    * Actualiza la URL base del servicio

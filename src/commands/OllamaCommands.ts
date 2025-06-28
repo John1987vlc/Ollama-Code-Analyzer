@@ -1,90 +1,56 @@
-import * as vscode from 'vscode';
-import { OllamaService } from '../services/OllamaService';
-import { CodeAnalyzer } from '../services/CodeAnalyzer';
+// src/commands/OllamaCommands.ts
 
-export function registerCommands(
-    context: vscode.ExtensionContext,
-    ollamaService: OllamaService,
-    codeAnalyzer: CodeAnalyzer
+import * as vscode from 'vscode';
+import { ExtensionServices } from '../extension';
+import { getRelativeFilePath } from '../utils/pathUtils'; // Moveremos la función aquí
+
+/**
+ * Controlador central para ejecutar el análisis.
+ * @param document El documento a analizar.
+ * @param services Los servicios de la extensión.
+ */
+export async function runAnalysis(
+    document: vscode.TextDocument | undefined, 
+    services: ExtensionServices
 ) {
-    // Comando para analizar el documento actual
-    const analyzeCurrentDocument = vscode.commands.registerCommand(
-        'ollamaCodeAnalyzer.analyzeCurrentDocument',
-        async () => {
-            const editor = vscode.window.activeTextEditor;
-            if (!editor) {
-                vscode.window.showWarningMessage('No hay ningún editor activo');
-                return;
+    if (!document) {
+        vscode.window.showInformationMessage("Por favor, abre un archivo para analizar.");
+        return;
+    }
+
+    const { codeAnalyzer, gitContextAnalyzer, giteaService, gitContextProvider } = services;
+
+    const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer');
+    const useGitContext = config.get<boolean>('gitea.useContextualAnalysis', true);
+
+    vscode.window.withProgress({
+        location: vscode.ProgressLocation.Notification,
+        title: `Analizandocon el modelo configurado'}...`,
+        cancellable: true
+    }, async (progress, token) => {
+        if (useGitContext && await giteaService.isConfigured()) {
+            await gitContextAnalyzer.analyzeFileWithGitContext(document);
+            const relativePath = getRelativeFilePath(document.uri);
+            if (relativePath && !token.isCancellationRequested) {
+                gitContextProvider.refresh(relativePath);
             }
-            
-            await vscode.window.withProgress({
-                location: vscode.ProgressLocation.Notification,
-                title: 'Analizando código...',
-                cancellable: false
-            }, async () => {
-                await codeAnalyzer.analyzeDocument(editor.document);
-            });
+        } else {
+            await codeAnalyzer.analyzeDocument(document);
         }
-    );
-    
-    // Comando para limpiar diagnósticos
-    const clearDiagnostics = vscode.commands.registerCommand(
-        'ollamaCodeAnalyzer.clearDiagnostics',
-        () => {
-            codeAnalyzer.clearDiagnostics();
-            vscode.window.showInformationMessage('Diagnósticos limpiados');
-        }
-    );
-    
-    // Comando para mostrar modelos recomendados
-    const showRecommendedModels = vscode.commands.registerCommand(
-        'ollamaCodeAnalyzer.showRecommendedModels',
-        async () => {
-            const recommendations = [
-                'codellama - Especializado en código',
-                'deepseek-coder - Excelente para análisis de código',
-                'starcoder - Bueno para múltiples lenguajes',
-                'phind-codellama - Optimizado para explicaciones'
-            ];
-            
-            const info = `Modelos recomendados para análisis de código:\n\n${recommendations.join('\n')}`;
-            
-            const doc = await vscode.workspace.openTextDocument({
-                content: info,
-                language: 'text'
-            });
-            await vscode.window.showTextDocument(doc);
-        }
-    );
-    
-    // Comando para configurar modelo
-    const configureModel = vscode.commands.registerCommand(
-        'ollamaCodeAnalyzer.configureModel',
-        async () => {
-            const models = await ollamaService.getModels();
-            
-            if (models.length === 0) {
-                vscode.window.showWarningMessage('No hay modelos disponibles');
-                return;
-            }
-            
-            const modelNames = models.map(m => m.name);
-            const selected = await vscode.window.showQuickPick(modelNames, {
-                placeHolder: 'Selecciona el modelo para análisis de código'
-            });
-            
-            if (selected) {
-                const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer');
-                await config.update('model', selected, vscode.ConfigurationTarget.Global);
-                vscode.window.showInformationMessage(`Modelo configurado: ${selected}`);
-            }
-        }
-    );
-    
-    context.subscriptions.push(
-        analyzeCurrentDocument,
-        clearDiagnostics,
-        showRecommendedModels,
-        configureModel
-    );
+    });
+}
+
+
+export function registerOllamaCommands(context: vscode.ExtensionContext, services: ExtensionServices) {
+    // Comando para análisis manual con atajo de teclado
+    const analyzeFileCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.analyzeCurrentFile', () => {
+        runAnalysis(vscode.window.activeTextEditor?.document, services);
+    });
+
+    // Comando para menú contextual con Gemma
+    const analyzeWithGemmaCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.analyzeWithGemma', () => {
+        runAnalysis(vscode.window.activeTextEditor?.document, services);
+    });
+
+    context.subscriptions.push(analyzeFileCommand, analyzeWithGemmaCommand);
 }

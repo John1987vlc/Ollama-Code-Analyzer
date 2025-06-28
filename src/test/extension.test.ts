@@ -1,15 +1,51 @@
 import * as assert from 'assert';
+import fetch from 'node-fetch';
+import { suite, test } from 'mocha';
 
-// You can import and use all API from the 'vscode' module
-// as well as import your extension to test it
-import * as vscode from 'vscode';
-// import * as myExtension from '../../extension';
+suite('Ollama API Connection', () => {
+  test('Debe responder Ollama sin timeout', async () => {
+	
+    const baseUrl = 'http://localhost:11434'; // cambia por tu URL Ollama
+    const model = 'codellama:7b';
 
-suite('Extension Test Suite', () => {
-	vscode.window.showInformationMessage('Start all tests.');
+   const payload = {
+  model,
+  messages: [
+    { role: "user", content: "print('Hola mundo')" }
+  ]
+};
 
-	test('Sample test', () => {
-		assert.strictEqual(-1, [1, 2, 3].indexOf(5));
-		assert.strictEqual(-1, [1, 2, 3].indexOf(0));
-	});
-});
+    const controller = new AbortController();
+    const timeout = 10000; // 10 segundos para la prueba
+
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    try {
+      const response = await fetch(`${baseUrl}/v1/chat/completions`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const text = await response.text();
+        assert.fail(
+          `Respuesta no exitosa: status=${response.status} ${response.statusText}, body=${text}`
+        );
+      }
+
+      const data = await response.json();
+      assert.ok(data, 'No se recibió data');
+
+      console.log('Respuesta de Ollama:', data);
+    } catch (error) {
+      if (error === 'AbortError') {
+        assert.fail(`Timeout de ${timeout / 1000} segundos alcanzado.`);
+      } else {
+        assert.fail(`Error en la solicitud: ${error}`);
+      }
+    }
+  });
+}).timeout(10000);
