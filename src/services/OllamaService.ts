@@ -36,7 +36,7 @@ export class OllamaService {
   private baseUrl: string;
   private timeout: number;
 
-  constructor(baseUrl: string = 'http://localhost:11434', timeout: number = 30000) {
+  constructor(baseUrl: string = 'http://localhost:11434', timeout: number = 300000) {
     this.baseUrl = baseUrl;
     this.timeout = timeout;
   }
@@ -105,54 +105,57 @@ export class OllamaService {
    */
   async generate(prompt: string, model: string, options: OllamaGenerateOptions = {}): Promise<OllamaResponse | null> {
     try {
-      // Validar que el prompt no esté vacío
       if (!prompt.trim()) {
         throw new Error('El prompt no puede estar vacío');
       }
-
-      // Validar que el modelo esté especificado
       if (!model.trim()) {
         throw new Error('Debe especificar un modelo');
       }
+        
+      // --- LOG ---
+      console.log(`[OllamaService] Enviando solicitud a /api/generate con el modelo ${model}.`);
 
       const response = await fetch(`${this.baseUrl}/api/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        // --- CORRECCIÓN CLAVE ---
+        // El endpoint /api/generate espera un campo "prompt", no "messages".
         body: JSON.stringify({
           model: model,
-          messages: [
-          { role: "user", content: prompt }
-        ],
-          stream: false, // Es crucial para recibir una única respuesta JSON
+          prompt: prompt, // <--- CAMBIO AQUÍ
+          stream: false,
           ...options,
         }),
         signal: AbortSignal.timeout(this.timeout)
       });
 
       if (!response.ok) {
+        const errorBody = await response.text();
+        // --- LOG DETALLADO ---
+        console.error(`[OllamaService] Error de la API de Ollama. Status: ${response.status}. Body: ${errorBody}`);
         if (response.status === 404) {
-          throw new Error(`El modelo "${model}" no fue encontrado. Asegúrese de que esté instalado.`);
+          throw new Error(`El modelo "${model}" no fue encontrado. Asegúrese de que esté instalado y disponible en Ollama.`);
         }
         throw new Error(`Error de la API de Ollama: ${response.status} ${response.statusText}`);
       }
 
       const rawData: unknown = await response.json();
       
-      // Validar que la respuesta tenga el formato esperado
       if (!this.isValidOllamaResponse(rawData)) {
-        console.error('Respuesta inválida de Ollama:', rawData);
+        console.error('[OllamaService] La respuesta de Ollama no tiene el formato esperado:', rawData);
         throw new Error('Respuesta inválida del servidor Ollama');
       }
 
       return rawData;
     } catch (error) {
-      console.error('Fallo al comunicarse con Ollama:', error);
+      // --- LOG DETALLADO ---
+      console.error('[OllamaService] Fallo al comunicarse con Ollama:', error);
       
       if (error instanceof Error) {
         if (error.name === 'TimeoutError') {
-          vscode.window.showErrorMessage('Timeout: La solicitud a Ollama tardó demasiado tiempo');
+          vscode.window.showErrorMessage('Timeout: La solicitud a Ollama tardó demasiado. Puede aumentar el timeout en la configuración.');
         } else if (error.message.includes('fetch')) {
           vscode.window.showErrorMessage('No se pudo conectar con el servicio local de Ollama. Asegúrese de que esté en ejecución.');
         } else {
@@ -167,95 +170,87 @@ export class OllamaService {
   /**
    * Genera texto con streaming (para respuestas en tiempo real)
    */
-  
-async generateStream(
-  prompt: string,
-  model: string,
-  options: OllamaGenerateOptions = {},
-  onChunk?: (chunk: string) => void
-): Promise<string> {
-  try {
-    const response = await fetch(`${this.baseUrl}/api/generate`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: "user", content: prompt }
-        ],
-        stream: true,
-        ...options,
-      }),
-    });
+  async generateStream(
+    prompt: string,
+    model: string,
+    options: OllamaGenerateOptions = {},
+    onChunk?: (chunk: string) => void
+  ): Promise<string> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // --- CORRECCIÓN CLAVE ---
+        // Aplicando la misma corrección para el streaming.
+        body: JSON.stringify({
+          model,
+          prompt: prompt, // <--- CAMBIO AQUÍ
+          stream: true,
+          ...options,
+        }),
+      });
 
-    if (!response.ok) {
-      throw new Error(`Error de la API de Ollama: ${response.statusText}`);
-    }
+      if (!response.ok) {
+        throw new Error(`Error de la API de Ollama: ${response.statusText}`);
+      }
 
-    if (!response.body) {
-      throw new Error('No se pudo leer la respuesta');
-    }
+      if (!response.body) {
+        throw new Error('No se pudo leer la respuesta');
+      }
 
-    const reader = response.body as Readable;
-    const decoder = new TextDecoder();
-    let fullResponse = '';
-    let buffer = '';
+      const reader = response.body as Readable;
+      const decoder = new TextDecoder();
+      let fullResponse = '';
+      let buffer = '';
 
-    for await (const chunkBuffer of reader) {
-      buffer += decoder.decode(chunkBuffer, { stream: true });
+      for await (const chunkBuffer of reader) {
+        buffer += decoder.decode(chunkBuffer, { stream: true });
 
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || '';
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
 
-      for (const line of lines) {
-        if (!line.trim()) {continue;}
+        for (const line of lines) {
+          if (!line.trim()) { continue; }
+          try {
+            const data = JSON.parse(line);
+            if (data?.response && typeof data.response === 'string') {
+              fullResponse += data.response;
+              onChunk?.(data.response);
+            }
+            if (data?.done === true) {
+              return fullResponse;
+            }
+          } catch {
+            // Ignorar error JSON
+          }
+        }
+      }
+
+      if (buffer.trim()) {
         try {
-          const data = JSON.parse(line);
+          const data = JSON.parse(buffer);
           if (data?.response && typeof data.response === 'string') {
             fullResponse += data.response;
             onChunk?.(data.response);
           }
-          if (data?.done === true) {
-            return fullResponse;
-          }
-        } catch {
-          // Ignorar error JSON
-        }
+        } catch { }
       }
+
+      return fullResponse;
+
+    } catch (error) {
+      console.error('Error en generateStream:', error);
+      vscode.window.showErrorMessage('Error al generar respuesta con streaming');
+      return '';
     }
-
-    // Procesar restos en buffer
-    if (buffer.trim()) {
-      try {
-        const data = JSON.parse(buffer);
-        if (data?.response && typeof data.response === 'string') {
-          fullResponse += data.response;
-          onChunk?.(data.response);
-        }
-      } catch {}
-    }
-
-    return fullResponse;
-
-  } catch (error) {
-    console.error('Error en generateStream:', error);
-    vscode.window.showErrorMessage('Error al generar respuesta con streaming');
-    return '';
   }
-}
 
-  /**
-   * Actualiza la URL base del servicio
-   */
   setBaseUrl(url: string): void {
     this.baseUrl = url;
   }
 
-  /**
-   * Actualiza el timeout de las solicitudes
-   */
   setTimeout(timeout: number): void {
     this.timeout = timeout;
   }

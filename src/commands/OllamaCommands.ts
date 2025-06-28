@@ -9,14 +9,18 @@ import { getRelativeFilePath } from '../utils/pathUtils'; // Moveremos la funci�
  * @param document El documento a analizar.
  * @param services Los servicios de la extensión.
  */
+
 export async function runAnalysis(
-    document: vscode.TextDocument | undefined, 
+    document: vscode.TextDocument | undefined,
     services: ExtensionServices
 ) {
     if (!document) {
         vscode.window.showInformationMessage("Por favor, abre un archivo para analizar.");
         return;
     }
+
+    // --- LOG ---
+    console.log(`[OllamaCommands] Iniciando análisis para: ${document.uri.fsPath}`);
 
     const { codeAnalyzer, gitContextAnalyzer, giteaService, gitContextProvider } = services;
 
@@ -25,16 +29,20 @@ export async function runAnalysis(
 
     vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
-        title: `Analizandocon el modelo configurado'}...`,
+        title: `Analizando con el modelo configurado...`,
         cancellable: true
     }, async (progress, token) => {
         if (useGitContext && await giteaService.isConfigured()) {
+            // --- LOG ---
+            console.log('[OllamaCommands] Usando análisis con contexto de Gitea.');
             await gitContextAnalyzer.analyzeFileWithGitContext(document);
             const relativePath = getRelativeFilePath(document.uri);
             if (relativePath && !token.isCancellationRequested) {
                 gitContextProvider.refresh(relativePath);
             }
         } else {
+            // --- LOG ---
+            console.log('[OllamaCommands] Usando análisis de documento estándar.');
             await codeAnalyzer.analyzeDocument(document);
         }
     });

@@ -160,6 +160,7 @@
     },
     "scripts": {
         "vscode:prepublish": "npm run compile",
+        "build": "tsc && powershell -Command \"New-Item -ItemType Directory -Force -Path out\\services; Copy-Item -Path src\\services\\analysisPrompt.txt -Destination out\\services\\",   
         "compile": "tsc -p ./",
         "watch": "tsc -watch -p ./",
         "pretest": "npm run compile && npm run lint",

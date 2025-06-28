@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as path from 'path';
 import { OllamaService } from './OllamaService';
 import { createHash } from 'crypto'; // Usar el módulo crypto de Node para un hash más robusto
 
@@ -49,69 +51,83 @@ export class CodeAnalyzer {
      * @param document El documento de VS Code a analizar.
      * @returns Una promesa que se resuelve con el resultado del análisis o null si se omite o falla.
      */
-     async analyzeDocument(document: vscode.TextDocument, modelOverride?: string): Promise<AnalysisResult | null> {
-       const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer');
-       // Usa el modelo sobreescrito si se proporciona, si no, el de la configuración
-       const model = modelOverride || config.get<string>('model', 'codellama');
-       const maxLines = config.get<number>('maxLines', 200);
+     
+async analyzeDocument(document: vscode.TextDocument, modelOverride?: string): Promise<AnalysisResult | null> {
+    const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer');
+    const model = modelOverride || config.get<string>('model', 'codellama');
+    const maxLines = config.get<number>('maxLines', 200);
 
-        // Omitir documentos no guardados o demasiado grandes
-        if (document.isUntitled || document.lineCount > maxLines) {
-            if (document.lineCount > maxLines) {
-                this.outputChannel.appendLine(`Análisis omitido: el documento es demasiado grande (${document.lineCount} líneas). Máximo configurado: ${maxLines}.`);
-            }
-            return null;
+    if (document.isUntitled || document.lineCount > maxLines) {
+        if (document.lineCount > maxLines) {
+            this.outputChannel.appendLine(`Análisis omitido: el documento es demasiado grande (${document.lineCount} líneas). Máximo configurado: ${maxLines}.`);
+        }
+        return null;
+    }
+
+    try {
+        const code = document.getText();
+        const cacheKey = this.generateCacheKey(document.uri.toString(), code);
+
+        if (this.analysisCache.has(cacheKey)) {
+            const cachedResult = this.analysisCache.get(cacheKey)!;
+            this.updateDiagnostics(document, cachedResult);
+            this.outputChannel.appendLine(`Análisis de '${document.fileName}' cargado desde caché.`);
+            return cachedResult;
         }
 
-        try {
-            const code = document.getText();
-            const cacheKey = this.generateCacheKey(document.uri.toString(), code);
+        // --- LOG ---
+        console.log(`[CodeAnalyzer] Iniciando análisis para ${document.fileName} con el modelo ${model}.`);
+        vscode.window.withProgress({
+            location: vscode.ProgressLocation.Window,
+            title: "Analizando código con Ollama...",
+            cancellable: false
+        }, async () => {
+            const prompt = this.createAnalysisPrompt(code, document.languageId);
 
-            // Servir desde la caché si es posible
-            if (this.analysisCache.has(cacheKey)) {
-                const cachedResult = this.analysisCache.get(cacheKey)!;
-                this.updateDiagnostics(document, cachedResult);
-                this.outputChannel.appendLine(`Análisis de '${document.fileName}' cargado desde caché.`);
-                return cachedResult;
-            }
+            // --- LOG ---
+            console.log("[CodeAnalyzer] Prompt generado para Ollama:", prompt);
 
-            this.outputChannel.appendLine(`Analizando '${document.fileName}' con el modelo '${model}'...`);
-            vscode.window.withProgress({
-                location: vscode.ProgressLocation.Window,
-                title: "Analizando código con Ollama...",
-                cancellable: false
-            }, async () => {
-                const prompt = this.createAnalysisPrompt(code, document.languageId);
-                const response = await this.ollamaService.generate(prompt, model, {
-                    temperature: 0.1,
-                    top_p: 0.9
-                });
-
-                if (!response || !response.response) {
-                    this.outputChannel.appendLine('Error: No se pudo obtener una respuesta válida de Ollama.');
-                    throw new Error('Respuesta vacía de Ollama');
-                }
-                
-                const analysisResult = this.parseAnalysisResponse(response.response);
-                
-                this.analysisCache.set(cacheKey, analysisResult);
-                this.updateDiagnostics(document, analysisResult);
-                
-                this.outputChannel.appendLine(`Análisis completado: ${analysisResult.suggestions.length} sugerencia(s) encontrada(s).`);
+            const response = await this.ollamaService.generate(prompt, model, {
+                temperature: 0.1,
+                top_p: 0.9
             });
             
-            // Dado que withProgress no devuelve el valor, lo recuperamos de la caché.
-            return this.analysisCache.get(cacheKey) || null;
+            // --- LOG ---
+            console.log("[CodeAnalyzer] Respuesta recibida de OllamaService:", response);
 
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            this.outputChannel.appendLine(`Error durante el análisis del documento: ${errorMessage}`);
-            console.error('Error en análisis de código:', error);
-            vscode.window.showErrorMessage(`Ollama Code Analyzer: ${errorMessage}`);
-            return null;
-        }
+
+            if (!response || !response.response) {
+                console.error('[CodeAnalyzer] Error: No se pudo obtener una respuesta válida de Ollama.');
+                this.outputChannel.appendLine('Error: No se pudo obtener una respuesta válida de Ollama.');
+                throw new Error('Respuesta vacía de Ollama');
+            }
+            
+            // --- LOG ---
+            console.log("[CodeAnalyzer] Respuesta cruda (string) de Ollama:", response.response);
+            
+            const analysisResult = this.parseAnalysisResponse(response.response);
+            
+            this.analysisCache.set(cacheKey, analysisResult);
+            this.updateDiagnostics(document, analysisResult);
+            
+            this.outputChannel.appendLine(`Análisis completado: ${analysisResult.suggestions.length} sugerencia(s) encontrada(s).`);
+
+            if (analysisResult.suggestions.length === 0) {
+                vscode.window.showInformationMessage("Análisis completado. No se encontraron sugerencias.");
+            }
+        });
+        
+        return this.analysisCache.get(cacheKey) || null;
+
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        // --- LOG ---
+        console.error(`[CodeAnalyzer] Error durante el análisis del documento:`, error);
+        this.outputChannel.appendLine(`Error durante el análisis del documento: ${errorMessage}`);
+        vscode.window.showErrorMessage(`Ollama Code Analyzer: ${errorMessage}`);
+        return null;
     }
-    
+}
 
     /**
      * **[MEJORA CLAVE]** Crea un prompt mucho más detallado y específico para el LLM.
@@ -119,94 +135,63 @@ export class CodeAnalyzer {
      * @param language El identificador de lenguaje (ej. 'typescript').
      * @returns El prompt completo para enviar a Ollama.
      */
-    private createAnalysisPrompt(code: string, language: string): string {
-        const languageName = this.getLanguageName(language);
+   private createAnalysisPrompt(code: string, language: string): string {
+   const promptPath = path.resolve(__dirname, 'analysisPrompt.txt');
+  let template = fs.readFileSync(promptPath, 'utf-8');
 
-        return `Eres un asistente experto en análisis de código estático para el lenguaje ${languageName}.
-Tu tarea es analizar el siguiente código y devolver un objeto JSON con tus hallazgos.
+  // Reemplaza los placeholders
+  const prompt = template
+    .replace(/{{language}}/g, language)
+    .replace(/{{code}}/g, code);
 
-Código a analizar:
-\`\`\`${language}
-${code}
-\`\`\`
-
-Analiza el código en busca de lo siguiente:
-1.  **Errores de Lógica y Bugs:** Problemas que causarían un comportamiento incorrecto o inesperado.
-2.  **Inconsistencias:** Detecta si los comentarios, nombres de variables o funciones son engañosos o no coinciden con lo que el código realmente hace. (Ej: una función llamada 'sumar' que en realidad multiplica).
-3.  **Vulnerabilidades de Seguridad:** Patrones de código que puedan introducir fallos de seguridad.
-4.  **Malas Prácticas y "Code Smells":** Código que funciona pero es difícil de mantener, ilegible o viola principios de diseño.
-5.  **Optimizaciones de Rendimiento:** Sugerencias para hacer el código más rápido o eficiente en uso de memoria.
-
-Proporciona tu análisis estrictamente en el siguiente formato JSON. No incluyas ningún texto, explicación o markdown antes o después del bloque JSON.
-
-{
-  "suggestions": [
-    {
-      "line": <número>,      // La línea donde INICIA el problema (1-indexado)
-      "column": <número>,     // La columna donde INICIA el problema (1-indexado)
-      "endLine": <número>,    // La línea donde TERMINA el problema
-      "endColumn": <número>,  // La columna donde TERMINA el problema
-      "message": "Descripción clara y concisa del problema y la sugerencia.",
-      "severity": "error|warning|info",
-      "code": "código_mejorado_opcional" // Si aplica, el fragmento de código corregido
-    }
-  ],
-  "summary": "Un resumen de una línea sobre la calidad general del código."
-}
-
-**Ejemplo para el caso que mencionaste:**
-Si una función por ejemplo: '''function suma(a, b) { /* Multiplica dos números */ return a * b; } ''', una sugerencia podría ser:
-{
-  "line": 1, "column": 1, "endLine": 1, "endColumn": 54,
-  "message": "Inconsistencia lógica: El nombre de la función 'suma' y su comentario indican una adición, pero la implementación realiza una multiplicación. Considere cambiar el nombre de la función a 'multiplicar' o la operación a 'a + b'.",
-  "severity": "error"
-}
-`;
-    }
-
+  return prompt;
+   }
+    
     /**
      * Parsea la respuesta en string de Ollama a un objeto `AnalysisResult`.
      * @param response La respuesta en bruto de Ollama.
      * @returns Un objeto `AnalysisResult` bien formado.
      */
     private parseAnalysisResponse(response: string): AnalysisResult {
-        try {
-            // Limpieza más robusta para encontrar el bloque JSON
-            const jsonMatch = response.match(/```json\s*(\{[\s\S]*\})\s*```|\{[\s\S]*\}/);
-            if (!jsonMatch) {
-                throw new Error("No se encontró un objeto JSON en la respuesta de Ollama.");
-            }
-            
-            // Tomamos el primer grupo de captura que no sea nulo (para ````json` o el objeto directo)
-            const jsonString = jsonMatch[1] || jsonMatch[0];
-            const parsed = JSON.parse(jsonString);
-
-            // Validación de la estructura del objeto parseado
-            if (!parsed || typeof parsed !== 'object') {
-                throw new Error("El JSON parseado no es un objeto válido.");
-            }
-
-            const suggestions = Array.isArray(parsed.suggestions) ? parsed.suggestions : [];
-            const summary = typeof parsed.summary === 'string' ? parsed.summary : 'Análisis completado sin resumen.';
-            
-            return {
-                suggestions,
-                summary,
-                timestamp: new Date()
-            };
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            this.outputChannel.appendLine(`Error al parsear la respuesta de Ollama: ${errorMessage}`);
-            console.error("Respuesta original de Ollama que causó el error:", response);
-            // Devuelve un resultado vacío pero válido para no romper el flujo
-            return {
-                suggestions: [],
-                summary: 'Error: No se pudo interpretar el análisis de Ollama.',
-                timestamp: new Date()
-            };
+    try {
+        // --- LOG ---
+        console.log("[CodeAnalyzer] Intentando parsear la respuesta...");
+        const jsonMatch = response.match(/```json\s*(\{[\s\S]*\})\s*```|\{[\s\S]*\}/);
+        if (!jsonMatch) {
+            throw new Error("No se encontró un objeto JSON en la respuesta de Ollama.");
         }
-    }
+        
+        const jsonString = jsonMatch[1] || jsonMatch[0];
+        const parsed = JSON.parse(jsonString);
 
+        if (!parsed || typeof parsed !== 'object') {
+            throw new Error("El JSON parseado no es un objeto válido.");
+        }
+
+        // --- LOG ---
+        console.log("[CodeAnalyzer] Respuesta parseada con éxito:", parsed);
+
+        const suggestions = Array.isArray(parsed.suggestions) ? parsed.suggestions : [];
+        const summary = typeof parsed.summary === 'string' ? parsed.summary : 'Análisis completado sin resumen.';
+        
+        return {
+            suggestions,
+            summary,
+            timestamp: new Date()
+        };
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        // --- LOG ---
+        console.error("[CodeAnalyzer] Error al parsear JSON. Respuesta original:", response);
+        this.outputChannel.appendLine(`Error al parsear la respuesta de Ollama: ${errorMessage}`);
+        
+        return {
+            suggestions: [],
+            summary: 'Error: No se pudo interpretar el análisis de Ollama.',
+            timestamp: new Date()
+        };
+    }
+}
     /**
      * **[MEJORA CLAVE]** Actualiza los diagnósticos en el editor usando rangos precisos.
      * @param document El documento al que se aplican los diagnósticos.
