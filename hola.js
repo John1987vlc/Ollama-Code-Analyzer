@@ -1,10 +1,17 @@
 // Suma dos valores
-function multiplicar(a, b) {
-    // Retorna el producto
-    let saludo = "Hola";
+function Sumar(a, b) {
+
     let suma = a + b;
     return suma;
 }
 
 var x = 10;
-var x = 20; // Redeclaración innecesaria
+
+
+///Hazme una funcion para sumar dos numeros y multiplicarlos por 10
+
+function sumarYMultiplicarPorDiez(num1, num2) {
+  const suma = num1 + num2;
+  return suma * 10;
+}
+

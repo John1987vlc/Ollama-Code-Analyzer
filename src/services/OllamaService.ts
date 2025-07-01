@@ -1,257 +1,397 @@
 import * as vscode from 'vscode';
-import fetch from 'node-fetch';
-import { Readable } from 'stream';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
-export interface OllamaModel {
+interface GenerateOptions {
+  temperature?: number;
+  maxTokens?: number;
+  stream?: boolean;
+  top_p?: number; // Agregado para el CodeAnalyzer
+}
+
+interface GenerateResponse {
+  response: string;
+  responseTokens: number;
+  promptTokens: number;
+}
+
+interface OllamaModel {
   name: string;
+  model: string;
   size: number;
   digest: string;
-  modified_at: string;
+  details: {
+    family: string;
+    families: string[] | null;
+    format: string;
+    parameter_size: string;
+    quantization_level: string;
+  };
+  expires_at: string;
+  size_vb: number;
 }
 
-export interface OllamaGenerateOptions {
-  temperature?: number;
-  top_k?: number;
-  top_p?: number;
-  num_predict?: number;
-  stop?: string[];
-  stream?: boolean;
-}
-
-export interface OllamaResponse {
-  model: string;
-  created_at: string;
-  response: string;
-  done: boolean;
-  context?: number[];
-  total_duration?: number;
-  load_duration?: number;
-  prompt_eval_count?: number;
-  prompt_eval_duration?: number;
-  eval_count?: number;
-  eval_duration?: number;
+interface ConceptualRefactoringResult {
+  intent: string;
+  explanation: string;
+  suggestion: string;
 }
 
 export class OllamaService {
-  private baseUrl: string;
-  private timeout: number;
+  private readonly baseUrl = 'http://127.0.0.1:11434';
+  private readonly timeoutMs = 30000;
 
-  constructor(baseUrl: string = 'http://localhost:11434', timeout: number = 300000) {
-    this.baseUrl = baseUrl;
-    this.timeout = timeout;
-  }
+  constructor() {}
 
-  /**
-   * Verifica si el servicio de Ollama está disponible
-   */
-  async isAvailable(): Promise<boolean> {
+  private async loadTemplate(templateName: string): Promise<string> {
+    const filePath = path.resolve(__dirname, templateName);
     try {
-      const response = await fetch(`${this.baseUrl}/api/version`, {
-        method: 'GET',
-        signal: AbortSignal.timeout(5000)
-      });
-      return response.ok;
+      return await fs.readFile(filePath, 'utf-8');
     } catch (error) {
-      return false;
+      vscode.window.showErrorMessage(`Error al cargar plantilla ${templateName}: ${(error as Error).message}`);
+      throw error;
     }
   }
 
-  /**
-   * Obtiene la lista de modelos disponibles
-   */
-  async getModels(): Promise<OllamaModel[]> {
+  private extractJsonArray(text: string): any[] | null {
+    // Busca un JSON array delimitado con ---json--- y ---end---
+    const match = text.match(/---json---\s*(\[[\s\S]*?\])\s*---end---/);
+    if (!match) return null;
     try {
-      const response = await fetch(`${this.baseUrl}/api/tags`, {
-        method: 'GET',
-        signal: AbortSignal.timeout(10000)
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error al obtener modelos: ${response.statusText}`);
-      }
-
-      const rawData: unknown = await response.json();
-      
-      // Validar que la respuesta tenga la estructura esperada
-      if (typeof rawData === 'object' && rawData !== null && 'models' in rawData) {
-        const data = rawData as { models: any[] };
-        return Array.isArray(data.models) ? data.models : [];
-      }
-
-      return [];
-    } catch (error) {
-      console.error('Error obteniendo modelos de Ollama:', error);
-      vscode.window.showErrorMessage('No se pudieron obtener los modelos de Ollama');
-      return [];
+      return JSON.parse(match[1]);
+    } catch {
+      return null;
     }
   }
 
-  /**
-   * Valida si un objeto tiene la estructura de OllamaResponse
-   */
-  private isValidOllamaResponse(obj: any): obj is OllamaResponse {
-    return (
-      obj &&
-      typeof obj === 'object' &&
-      typeof obj.model === 'string' &&
-      typeof obj.created_at === 'string' &&
-      typeof obj.response === 'string' &&
-      typeof obj.done === 'boolean'
-    );
-  }
-
-  /**
-   * Genera texto usando un modelo de Ollama
-   */
-  async generate(prompt: string, model: string, options: OllamaGenerateOptions = {}): Promise<OllamaResponse | null> {
+  private extractJsonObject(text: string): any | null {
+    // Busca un JSON object delimitado con ---json--- y ---end---
+    const match = text.match(/---json---\s*(\{[\s\S]*?\})\s*---end---/);
+    if (!match) return null;
     try {
-      if (!prompt.trim()) {
-        throw new Error('El prompt no puede estar vacío');
-      }
-      if (!model.trim()) {
-        throw new Error('Debe especificar un modelo');
-      }
-        
-      // --- LOG ---
-      console.log(`[OllamaService] Enviando solicitud a /api/generate con el modelo ${model}.`);
-
-      const response = await fetch(`${this.baseUrl}/api/generate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        // --- CORRECCIÓN CLAVE ---
-        // El endpoint /api/generate espera un campo "prompt", no "messages".
-        body: JSON.stringify({
-          model: model,
-          prompt: prompt, // <--- CAMBIO AQUÍ
-          stream: false,
-          ...options,
-        }),
-        signal: AbortSignal.timeout(this.timeout)
-      });
-
-      if (!response.ok) {
-        const errorBody = await response.text();
-        // --- LOG DETALLADO ---
-        console.error(`[OllamaService] Error de la API de Ollama. Status: ${response.status}. Body: ${errorBody}`);
-        if (response.status === 404) {
-          throw new Error(`El modelo "${model}" no fue encontrado. Asegúrese de que esté instalado y disponible en Ollama.`);
-        }
-        throw new Error(`Error de la API de Ollama: ${response.status} ${response.statusText}`);
-      }
-
-      const rawData: unknown = await response.json();
-      
-      if (!this.isValidOllamaResponse(rawData)) {
-        console.error('[OllamaService] La respuesta de Ollama no tiene el formato esperado:', rawData);
-        throw new Error('Respuesta inválida del servidor Ollama');
-      }
-
-      return rawData;
-    } catch (error) {
-      // --- LOG DETALLADO ---
-      console.error('[OllamaService] Fallo al comunicarse con Ollama:', error);
-      
-      if (error instanceof Error) {
-        if (error.name === 'TimeoutError') {
-          vscode.window.showErrorMessage('Timeout: La solicitud a Ollama tardó demasiado. Puede aumentar el timeout en la configuración.');
-        } else if (error.message.includes('fetch')) {
-          vscode.window.showErrorMessage('No se pudo conectar con el servicio local de Ollama. Asegúrese de que esté en ejecución.');
-        } else {
-          vscode.window.showErrorMessage(`Error de Ollama: ${error.message}`);
-        }
-      }
-      
+      return JSON.parse(match[1]);
+    } catch {
       return null;
     }
   }
 
   /**
-   * Genera texto con streaming (para respuestas en tiempo real)
+   * Verifica si Ollama está disponible
    */
-  async generateStream(
+  public async isAvailable(): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/tags`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(5000), // Timeout más corto para verificación
+      });
+      return response.ok;
+    } catch (error) {
+      console.error('Ollama no está disponible:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Obtiene la lista de modelos disponibles en Ollama
+   */
+  public async getModels(): Promise<OllamaModel[]> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/tags`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(this.timeoutMs),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error obteniendo modelos: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data.models || [];
+    } catch (error) {
+      console.error('Error obteniendo modelos de Ollama:', error);
+      vscode.window.showErrorMessage(`Error obteniendo modelos: ${(error as Error).message}`);
+      return [];
+    }
+  }
+
+  /**
+   * Genera código a partir de una instrucción
+   */
+  public async generateCode(instruction: string, language: string, model: string): Promise<string | null> {
+    try {
+      const prompt = `Generate ${language} code for the following instruction. Return ONLY the code, no explanations or markdown:
+
+Instruction: ${instruction}
+
+Code:`;
+
+      const response = await this.generate(prompt, model, {
+        temperature: 0.2,
+        stream: false
+      });
+
+      if (!response?.response) {
+        return null;
+      }
+
+      // Limpiar la respuesta de posibles markdown o explicaciones
+      let code = response.response.trim();
+      code = code.replace(/^```[\w]*\n|```$/gm, '').trim();
+      
+      return code;
+    } catch (error) {
+      console.error('Error generando código:', error);
+      vscode.window.showErrorMessage(`Error generando código: ${(error as Error).message}`);
+      return null;
+    }
+  }
+
+  /**
+   * Realiza refactorización conceptual del código
+   */
+  public async getConceptualRefactoring(
+    code: string,
+    language: string,
+    model: string
+  ): Promise<ConceptualRefactoringResult | null> {
+    try {
+      const prompt = `Analyze this ${language} code and suggest a conceptual refactoring. 
+
+Code:
+\`\`\`${language}
+${code}
+\`\`\`
+
+Respond with a JSON object containing:
+- intent: Brief description of what you think the user wants to achieve
+- explanation: Detailed explanation of the suggested refactoring
+- suggestion: The refactored code
+
+Format your response as:
+---json---
+{
+  "intent": "your intent description",
+  "explanation": "your explanation",
+  "suggestion": "refactored code here"
+}
+---end---`;
+
+      const response = await this.generate(prompt, model, {
+        temperature: 0.3,
+        stream: false
+      });
+
+      if (!response?.response) {
+        return null;
+      }
+
+      const result = this.extractJsonObject(response.response);
+      if (result && result.intent && result.explanation && result.suggestion) {
+        return result as ConceptualRefactoringResult;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error en refactorización conceptual:', error);
+      vscode.window.showErrorMessage(`Error en refactorización: ${(error as Error).message}`);
+      return null;
+    }
+  }
+
+  public async getRefactoringSuggestions(
+    code: string,
+    language: string,
+    model: string
+  ): Promise<any[] | null> {
+    try {
+      const promptTemplate = await this.loadTemplate('../prompts/refactorPrompt.txt');
+      const prompt = promptTemplate.replace('{{code}}', code).replace('{{language}}', language);
+
+      const response = await this.generate(prompt, model, { temperature: 0.3, stream: false });
+      if (!response?.response) return null;
+
+      const suggestions = this.extractJsonArray(response.response);
+      return suggestions || null;
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        vscode.window.showErrorMessage('Tiempo de espera agotado al obtener sugerencias de refactorización.');
+      } else {
+        vscode.window.showErrorMessage(`Error obteniendo sugerencias de refactorización: ${(error as Error).message}`);
+      }
+      return null;
+    }
+  }
+
+  public async getReviewSuggestions(
+    code: string,
+    language: string,
+    model: string
+  ): Promise<any[] | null> {
+    try {
+      const promptTemplate = await this.loadTemplate('../prompts/reviewPrompt.txt');
+      const prompt = promptTemplate.replace('{{code}}', code).replace('{{language}}', language);
+
+      const response = await this.generate(prompt, model, { temperature: 0.3, stream: false });
+      if (!response?.response) return null;
+
+      const suggestions = this.extractJsonArray(response.response);
+      return suggestions || null;
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        vscode.window.showErrorMessage('Tiempo de espera agotado al obtener sugerencias de revisión.');
+      } else {
+        vscode.window.showErrorMessage(`Error obteniendo sugerencias de revisión: ${(error as Error).message}`);
+      }
+      return null;
+    }
+  }
+
+  public async getTestSuggestions(
+    code: string,
+    language: string,
+    model: string
+  ): Promise<any[] | null> {
+    try {
+      const promptTemplate = await this.loadTemplate('../prompts/testPrompt.txt');
+      const prompt = promptTemplate.replace('{{code}}', code).replace('{{language}}', language);
+
+      const response = await this.generate(prompt, model, { temperature: 0.3, stream: false });
+      if (!response?.response) return null;
+
+      const suggestions = this.extractJsonArray(response.response);
+      return suggestions || null;
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        vscode.window.showErrorMessage('Tiempo de espera agotado al obtener sugerencias de pruebas.');
+      } else {
+        vscode.window.showErrorMessage(`Error obteniendo sugerencias de pruebas: ${(error as Error).message}`);
+      }
+      return null;
+    }
+  }
+
+  public async generate(
     prompt: string,
     model: string,
-    options: OllamaGenerateOptions = {},
-    onChunk?: (chunk: string) => void
-  ): Promise<string> {
+    options: GenerateOptions = {}
+  ): Promise<GenerateResponse | null> {
+    const { temperature = 0.5, maxTokens = 1024, stream = false } = options;
+
     try {
+      if (stream) {
+        return await this.generateStream(prompt, model, { temperature, maxTokens });
+      }
+
       const response = await fetch(`${this.baseUrl}/api/generate`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        // --- CORRECCIÓN CLAVE ---
-        // Aplicando la misma corrección para el streaming.
+        headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(this.timeoutMs),
         body: JSON.stringify({
           model,
-          prompt: prompt, // <--- CAMBIO AQUÍ
-          stream: true,
-          ...options,
+          prompt,
+          options: {
+            temperature,
+            num_predict: maxTokens,
+            top_p: options.top_p
+          },
+          stream: false,
         }),
       });
 
       if (!response.ok) {
-        throw new Error(`Error de la API de Ollama: ${response.statusText}`);
+        throw new Error(`Error en la petición: ${response.statusText}`);
       }
 
-      if (!response.body) {
-        throw new Error('No se pudo leer la respuesta');
+      const data = await response.json();
+      
+      // Ollama devuelve la respuesta directamente en el campo 'response'
+      return {
+        response: data.response || '',
+        responseTokens: data.eval_count || 0,
+        promptTokens: data.prompt_eval_count || 0,
+      };
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        vscode.window.showErrorMessage('Tiempo de espera agotado en la generación de texto.');
+      } else {
+        vscode.window.showErrorMessage(`Error en la generación: ${(error as Error).message}`);
+      }
+      return null;
+    }
+  }
+
+  private async generateStream(
+    prompt: string,
+    model: string,
+    options: { temperature: number; maxTokens: number }
+  ): Promise<GenerateResponse | null> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(this.timeoutMs),
+        body: JSON.stringify({
+          model,
+          prompt,
+          options: {
+            temperature: options.temperature,
+            num_predict: options.maxTokens,
+          },
+          stream: true,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error en la petición: ${response.statusText}`);
       }
 
-      const reader = response.body as Readable;
+      if (!response.body || !response.body.getReader) {
+        throw new Error('La respuesta no contiene un body legible.');
+      }
+
+      const reader = response.body.getReader();
+      let resultText = '';
+      let totalResponseTokens = 0;
+      let totalPromptTokens = 0;
       const decoder = new TextDecoder();
-      let fullResponse = '';
-      let buffer = '';
 
-      for await (const chunkBuffer of reader) {
-        buffer += decoder.decode(chunkBuffer, { stream: true });
-
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n').filter(line => line.trim());
+        
         for (const line of lines) {
-          if (!line.trim()) { continue; }
           try {
-            const data = JSON.parse(line);
-            if (data?.response && typeof data.response === 'string') {
-              fullResponse += data.response;
-              onChunk?.(data.response);
+            const jsonData = JSON.parse(line);
+            if (jsonData.response) {
+              resultText += jsonData.response;
             }
-            if (data?.done === true) {
-              return fullResponse;
+            if (jsonData.eval_count) {
+              totalResponseTokens = jsonData.eval_count;
             }
-          } catch {
-            // Ignorar error JSON
+            if (jsonData.prompt_eval_count) {
+              totalPromptTokens = jsonData.prompt_eval_count;
+            }
+          } catch (parseError) {
+            // Ignorar líneas que no son JSON válido
           }
         }
       }
 
-      if (buffer.trim()) {
-        try {
-          const data = JSON.parse(buffer);
-          if (data?.response && typeof data.response === 'string') {
-            fullResponse += data.response;
-            onChunk?.(data.response);
-          }
-        } catch { }
-      }
-
-      return fullResponse;
-
+      return {
+        response: resultText,
+        responseTokens: totalResponseTokens,
+        promptTokens: totalPromptTokens,
+      };
     } catch (error) {
-      console.error('Error en generateStream:', error);
-      vscode.window.showErrorMessage('Error al generar respuesta con streaming');
-      return '';
+      if (error instanceof Error && error.name === 'AbortError') {
+        vscode.window.showErrorMessage('Tiempo de espera agotado en la generación por stream.');
+      } else {
+        vscode.window.showErrorMessage(`Error en la generación por stream: ${(error as Error).message}`);
+      }
+      return null;
     }
-  }
-
-  setBaseUrl(url: string): void {
-    this.baseUrl = url;
-  }
-
-  setTimeout(timeout: number): void {
-    this.timeout = timeout;
   }
 }

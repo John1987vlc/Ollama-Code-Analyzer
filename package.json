@@ -1,194 +1,295 @@
 {
-    "name": "ollama-code-analyzer",
-    "displayName": "Ollama Code Analyzer",
-    "description": "Analiza tu código en tiempo real usando Ollama y modelos de IA locales",
-    "publisher": "ollama-code-analyzer-Gemma3n-Gitea",
-    "version": "1.0.0",
-    "engines": {
-        "vscode": "^1.74.0"
-    },
-    "categories": [
-        "Other",
-        "Linters",
-        "Programming Languages"
+  "name": "ollama-code-analyzer",
+  "displayName": "Ollama Code Analyzer",
+  "description": "Analiza tu código en tiempo real usando Ollama y modelos de IA locales",
+  "publisher": "ollama-code-analyzer-Gemma3n-Gitea",
+  "version": "1.0.0",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other",
+    "Linters",
+    "Programming Languages"
+  ],
+  "keywords": [
+    "ollama",
+    "ai",
+    "code analysis",
+    "suggestions",
+    "local ai"
+  ],
+  "activationEvents": [
+    "onLanguage:csharp",
+    "onLanguage:javascript",
+    "onLanguage:typescript",
+    "onLanguage:python"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "ollamaCodeAnalyzer.analyzeCurrentDocument",
+        "title": "Analizar Documento Actual",
+        "category": "Ollama"
+      },
+      {
+        "command": "ollamaCodeAnalyzer.clearDiagnostics",
+        "title": "Limpiar Diagnósticos",
+        "category": "Ollama"
+      },
+      {
+        "command": "ollamaCodeAnalyzer.showRecommendedModels",
+        "title": "Mostrar Modelos Recomendados",
+        "category": "Ollama"
+      },
+      {
+        "command": "ollamaCodeAnalyzer.configureModel",
+        "title": "Configurar Modelo",
+        "category": "Ollama"
+      },
+      {
+        "command": "ollamaCodeAnalyzer.analyzeWithGemma",
+        "title": "Ollama: Revisar con Gemma"
+      },
+      {
+        "command": "ollamaCodeAnalyzer.generateCodeFromComment",
+        "title": "Ollama: Generar código desde comentario",
+        "category": "Ollama"
+      },
+      {
+        "command": "ollamaCodeAnalyzer.findSuggestions",
+        "title": "Ollama: Buscar sugerencias de refactorización",
+        "category": "Ollama"
+      },
+      {
+        "command": "ollamaCodeAnalyzer.conceptualRefactor",
+        "title": "Ollama: Proponer refactorización inteligente",
+        "category": "Ollama"
+      },
+      {
+        "command": "ollamaCodeAnalyzer.explainCode",
+        "title": "Ollama: Explicar código seleccionado",
+        "category": "Ollama"
+      },
+      {
+        "command": "ollamaCodeAnalyzer.checkCompanyStandards",
+        "title": "Ollama: Validar estándares de empresa",
+        "category": "Ollama"
+      },
+      {
+        "command": "ollamaCodeAnalyzer.generateUnitTest",
+        "title": "Ollama: Generar prueba unitaria",
+        "category": "Ollama"
+      },
+      {
+        "command": "ollamaCodeAnalyzer.findDuplicateLogic",
+        "title": "Ollama: Detectar lógica duplicada",
+        "category": "Ollama"
+      }
     ],
-    "keywords": [
-        "ollama",
-        "ai",
-        "code analysis",
-        "suggestions",
-        "local ai"
-    ],
-    "activationEvents": [
-        "onLanguage:csharp",
-        "onLanguage:javascript",
-        "onLanguage:typescript",
-        "onLanguage:python"
-    ],
-    "main": "./out/extension.js",
-    "contributes": {
-        "commands": [
-            {
-                "command": "ollamaCodeAnalyzer.analyzeCurrentDocument",
-                "title": "Analizar Documento Actual",
-                "category": "Ollama"
-            },
-            {
-                "command": "ollamaCodeAnalyzer.clearDiagnostics",
-                "title": "Limpiar Diagnósticos",
-                "category": "Ollama"
-            },
-            {
-                "command": "ollamaCodeAnalyzer.showRecommendedModels",
-                "title": "Mostrar Modelos Recomendados",
-                "category": "Ollama"
-            },
-            {
-                "command": "ollamaCodeAnalyzer.configureModel",
-                "title": "Configurar Modelo",
-                "category": "Ollama"
-            },
-            {
-              "command": "ollamaCodeAnalyzer.analyzeWithGemma",
-              "title": "Ollama: Revisar con Gemma"
-            }
-        ],
-        "menus": {
-            "editor/context": [
-                {
-                    "command": "ollamaCodeAnalyzer.analyzeCurrentDocument",
-                    "when": "resourceLangId in ollamaCodeAnalyzer.supportedLanguages",
-                    "group": "1_modification"
-                },
-                {
-                  "when": "editorTextFocus",
-                  "command": "ollamaCodeAnalyzer.analyzeWithGemma",
-                  "group": "navigation"
-                }
-            ],
-            "commandPalette": [
-                {
-                    "command": "ollamaCodeAnalyzer.analyzeCurrentDocument",
-                    "when": "editorIsOpen"
-                }
-            ]
+    "menus": {
+      "editor/context": [
+        {
+          "command": "ollamaCodeAnalyzer.analyzeCurrentDocument",
+          "when": "resourceLangId in ollamaCodeAnalyzer.supportedLanguages",
+          "group": "1_modification"
         },
-        "configuration": {
-            "title": "Ollama Code Analyzer",
-            "properties": {
-                "ollamaCodeAnalyzer.baseUrl": {
-                    "type": "string",
-                    "default": "http://localhost:11434",
-                    "description": "URL base del servicio Ollama"
-                },
-                "ollamaCodeAnalyzer.model": {
-                    "type": "string",
-                    "default": "codellama:7b",
-                    "description": "Modelo de Ollama a usar para análisis de código"
-                },
-                "ollamaCodeAnalyzer.timeout": {
-                    "type": "number",
-                    "default": 45000,
-                    "description": "Timeout en milisegundos para las solicitudes (45 segundos por defecto)"
-                },
-                "ollamaCodeAnalyzer.autoAnalyze": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "Analizar automáticamente el código mientras escribes"
-                },
-                "ollamaCodeAnalyzer.analyzeOnOpen": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "Analizar automáticamente cuando se abre un archivo"
-                },
-                "ollamaCodeAnalyzer.supportedLanguages": {
-                    "type": "array",
-                    "default": [
-                        "csharp",
-                        "javascript",
-                        "typescript",
-                        "python",
-                        "java",
-                        "cpp",
-                        "c"
-                    ],
-                    "description": "Lenguajes soportados para análisis automático",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "ollamaCodeAnalyzer.maxLines": {
-                    "type": "number",
-                    "default": 200,
-                    "description": "Número máximo de líneas para analizar (evita archivos muy grandes)"
-                },
-                "ollamaCodeAnalyzer.debounceDelay": {
-                    "type": "number",
-                    "default": 800,
-                    "description": "Delay en milisegundos antes de analizar después de cambios (debounce)"
-                },
-                "ollamaCodeAnalyzer.gitea.baseUrl": {
-                    "type": "string",
-                    "default": "",
-                    "description": "URL base de tu instancia de Gitea (ej. https://gitea.com)"
-                },
-                "ollamaCodeAnalyzer.gitea.token": {
-                    "type": "string",
-                    "default": "",
-                    "description": "Token de acceso de Gitea"
-                },
-                "ollamaCodeAnalyzer.gitea.organization": {
-                    "type": "string",
-                    "default": "",
-                    "description": "Organización en Gitea"
-                },
-                "ollamaCodeAnalyzer.gitea.repository": {
-                    "type": "string",
-                    "default": "",
-                    "description": "Repositorio en Gitea"
-                }
-            }
+        {
+          "when": "editorTextFocus",
+          "command": "ollamaCodeAnalyzer.analyzeWithGemma",
+          "group": "navigation"
         },
-        "keybindings": [
-             {
-                "command": "ollamaCodeAnalyzer.analyzeCurrentFile",
-                "key": "ctrl+shift+j",
-                "mac": "cmd+shift+j",
-                "when": "editorTextFocus"
-              }
-        ]
+        {
+          "command": "ollamaCodeAnalyzer.conceptualRefactor",
+          "when": "editorHasSelection",
+          "group": "2_refactor"
+        },
+        {
+          "command": "ollamaCodeAnalyzer.explainCode",
+          "when": "editorHasSelection",
+          "group": "2_refactor"
+        },
+        {
+          "command": "ollamaCodeAnalyzer.generateUnitTest",
+          "when": "editorHasSelection",
+          "group": "2_refactor"
+        },
+        {
+          "command": "ollamaCodeAnalyzer.checkCompanyStandards",
+          "when": "editorTextFocus",
+          "group": "3_analysis"
+        },
+        {
+          "command": "ollamaCodeAnalyzer.findDuplicateLogic",
+          "when": "editorTextFocus",
+          "group": "3_analysis"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "ollamaCodeAnalyzer.analyzeCurrentDocument",
+          "when": "editorIsOpen"
+        },
+        {
+          "command": "ollamaCodeAnalyzer.explainCode",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "ollamaCodeAnalyzer.generateUnitTest",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "ollamaCodeAnalyzer.checkCompanyStandards",
+          "when": "editorTextFocus"
+        },
+        {
+          "command": "ollamaCodeAnalyzer.findDuplicateLogic",
+          "when": "editorTextFocus"
+        }
+      ]
     },
-    "scripts": {
-        "vscode:prepublish": "npm run compile",
-        "build": "tsc && powershell -Command \"New-Item -ItemType Directory -Force -Path out\\services; Copy-Item -Path src\\services\\analysisPrompt.txt -Destination out\\services\\",   
-        "compile": "tsc -p ./",
-        "watch": "tsc -watch -p ./",
-        "pretest": "npm run compile && npm run lint",
-        "lint": "eslint src",
-        "test": "mocha -r ts-node/register ./out/test/*.test.js"
-    },
-    "devDependencies": {
-        "@types/mocha": "^10.0.10",
-        "@types/node": "16.x",
-        "@types/node-fetch": "^2.6.12",
-        "@types/vscode": "^1.74.0",
-        "@typescript-eslint/eslint-plugin": "^5.45.0",
-        "@typescript-eslint/parser": "^5.45.0",
-        "eslint": "^8.57.0",
-        "mocha": "^11.7.1",
-        "ts-node": "^10.9.2",
-        "typescript": "^4.9.5"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/tu-usuario/ollama-code-analyzer.git"
-    },
-    "bugs": {
-        "url": "https://github.com/tu-usuario/ollama-code-analyzer/issues"
-    },
-    "homepage": "https://github.com/tu-usuario/ollama-code-analyzer#readme",
-    "license": "MIT",
-    "dependencies": {
-        "node-fetch": "^2.7.0"
+    "keybindings": [
+      {
+        "command": "ollamaCodeAnalyzer.generateCodeFromComment",
+        "key": "ctrl+shift+j",
+        "mac": "cmd+shift+j",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "ollamaCodeAnalyzer.conceptualRefactor",
+        "key": "ctrl+shift+h",
+        "mac": "cmd+shift+h",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "ollamaCodeAnalyzer.explainCode",
+        "key": "ctrl+shift+e",
+        "mac": "cmd+shift+e",
+        "when": "editorTextFocus && editorHasSelection"
+      },
+      {
+        "command": "ollamaCodeAnalyzer.generateUnitTest",
+        "key": "ctrl+shift+u",
+        "mac": "cmd+shift+u",
+        "when": "editorTextFocus && editorHasSelection"
+      },
+      {
+        "command": "ollamaCodeAnalyzer.checkCompanyStandards",
+        "key": "ctrl+shift+s",
+        "mac": "cmd+shift+s",
+        "when": "editorTextFocus"
+      }
+    ],
+    "configuration": {
+      "title": "Ollama Code Analyzer",
+      "properties": {
+        "ollamaCodeAnalyzer.baseUrl": {
+          "type": "string",
+          "default": "http://localhost:11434",
+          "description": "URL base del servicio Ollama"
+        },
+        "ollamaCodeAnalyzer.model": {
+          "type": "string",
+          "default": "codellama:7b",
+          "description": "Modelo de Ollama a usar para análisis de código"
+        },
+        "ollamaCodeAnalyzer.timeout": {
+          "type": "number",
+          "default": 45000,
+          "description": "Timeout en milisegundos para las solicitudes (45 segundos por defecto)"
+        },
+        "ollamaCodeAnalyzer.autoAnalyze": {
+          "type": "boolean",
+          "default": false,
+          "description": "Analizar automáticamente el código mientras escribes"
+        },
+        "ollamaCodeAnalyzer.analyzeOnOpen": {
+          "type": "boolean",
+          "default": false,
+          "description": "Analizar automáticamente cuando se abre un archivo"
+        },
+        "ollamaCodeAnalyzer.supportedLanguages": {
+          "type": "array",
+          "default": [
+            "csharp",
+            "javascript",
+            "typescript",
+            "python",
+            "java",
+            "cpp",
+            "c"
+          ],
+          "description": "Lenguajes soportados para análisis automático",
+          "items": {
+            "type": "string"
+          }
+        },
+        "ollamaCodeAnalyzer.maxLines": {
+          "type": "number",
+          "default": 200,
+          "description": "Número máximo de líneas para analizar (evita archivos muy grandes)"
+        },
+        "ollamaCodeAnalyzer.debounceDelay": {
+          "type": "number",
+          "default": 800,
+          "description": "Delay en milisegundos antes de analizar después de cambios (debounce)"
+        },
+        "ollamaCodeAnalyzer.gitea.baseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "URL base de tu instancia de Gitea (ej. https://gitea.com)"
+        },
+        "ollamaCodeAnalyzer.gitea.token": {
+          "type": "string",
+          "default": "",
+          "description": "Token de acceso de Gitea"
+        },
+        "ollamaCodeAnalyzer.gitea.organization": {
+          "type": "string",
+          "default": "",
+          "description": "Organización en Gitea"
+        },
+        "ollamaCodeAnalyzer.gitea.repository": {
+          "type": "string",
+          "default": "",
+          "description": "Repositorio en Gitea"
+        }
+      }
     }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "build": "tsc && cpx \"src/prompts/**/*.txt\" out/prompts",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "mocha -r ts-node/register ./out/test/*.test.js"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "16.x",
+    "@types/node-fetch": "^2.6.12",
+    "@types/vscode": "^1.74.0",
+    "@typescript-eslint/eslint-plugin": "^5.45.0",
+    "@typescript-eslint/parser": "^5.45.0",
+    "cpx": "^1.5.0",
+    "eslint": "^8.57.0",
+    "mocha": "^11.7.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^4.9.5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tu-usuario/ollama-code-analyzer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/tu-usuario/ollama-code-analyzer/issues"
+  },
+  "homepage": "https://github.com/tu-usuario/ollama-code-analyzer#readme",
+  "license": "MIT",
+  "dependencies": {
+    "node-fetch": "^2.7.0"
+  }
 }

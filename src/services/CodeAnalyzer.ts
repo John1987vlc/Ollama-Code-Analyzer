@@ -54,7 +54,7 @@ export class CodeAnalyzer {
      
 async analyzeDocument(document: vscode.TextDocument, modelOverride?: string): Promise<AnalysisResult | null> {
     const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer');
-    const model = modelOverride || config.get<string>('model', 'codellama');
+    const model = modelOverride || config.get<string>('model', 'gemma3n:latest');
     const maxLines = config.get<number>('maxLines', 200);
 
     if (document.isUntitled || document.lineCount > maxLines) {
@@ -135,17 +135,22 @@ async analyzeDocument(document: vscode.TextDocument, modelOverride?: string): Pr
      * @param language El identificador de lenguaje (ej. 'typescript').
      * @returns El prompt completo para enviar a Ollama.
      */
-   private createAnalysisPrompt(code: string, language: string): string {
-   const promptPath = path.resolve(__dirname, 'analysisPrompt.txt');
-  let template = fs.readFileSync(promptPath, 'utf-8');
+    private createAnalysisPrompt(code: string, language: string): string {
+        const promptPath = path.resolve(__dirname, 'analysisPrompt.txt');
+        let template = fs.readFileSync(promptPath, 'utf-8');
 
-  // Reemplaza los placeholders
-  const prompt = template
-    .replace(/{{language}}/g, language)
-    .replace(/{{code}}/g, code);
+        // Obtenemos el nombre "bonito" del lenguaje para el prompt
+        const languageName = this.getLanguageName(language);
 
-  return prompt;
-   }
+        // --- CORRECCIÓN ---
+        // Usamos la sintaxis correcta de los placeholders (${...}) que definiste en el .txt
+        const prompt = template
+            .replace(/\$\{languageName\}/g, languageName)
+            .replace(/\$\{language\}/g, language)
+            .replace(/\$\{code\}/g, code);
+
+        return prompt;
+    }
     
     /**
      * Parsea la respuesta en string de Ollama a un objeto `AnalysisResult`.
