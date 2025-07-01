@@ -2,14 +2,9 @@
 
 import * as vscode from 'vscode';
 import { ExtensionServices } from '../extension';
-import { getRelativeFilePath } from '../utils/pathUtils'; // Moveremos la función aquí
+import { getRelativeFilePath } from '../utils/pathUtils';
 
-/**
- * Controlador central para ejecutar el análisis.
- * @param document El documento a analizar.
- * @param services Los servicios de la extensión.
- */
-
+// ... (runAnalysis sin cambios) ...
 export async function runAnalysis(
     document: vscode.TextDocument | undefined,
     services: ExtensionServices
@@ -50,33 +45,57 @@ export async function runAnalysis(
 
 
 export function registerOllamaCommands(context: vscode.ExtensionContext, services: ExtensionServices) {
-    // Comando para análisis manual con atajo de teclado
     const analyzeFileCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.analyzeCurrentFile', () => {
         runAnalysis(vscode.window.activeTextEditor?.document, services);
     });
 
-    // Comando para menú contextual con Gemma
     const analyzeWithGemmaCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.analyzeWithGemma', () => {
         runAnalysis(vscode.window.activeTextEditor?.document, services);
     });
 
-     // Comando para generar código desde un comentario
     const generateCodeCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.generateCodeFromComment', () => {
         generateCodeFromComment(services);
     });
 
-     const conceptualRefactorCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.conceptualRefactor', () => {
+    const conceptualRefactorCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.conceptualRefactor', () => {
         runConceptualRefactor(services);
     });
 
+    const showRecommendedModelsCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.showRecommendedModels', () => {
+        showRecommendedModels(services);
+    });
 
+    const explainCodeCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.explainCode', () => {
+        explainCode(services);
+    });
 
-    context.subscriptions.push(analyzeFileCommand, analyzeWithGemmaCommand,generateCodeCommand,conceptualRefactorCommand);
+    const generateUnitTestCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.generateUnitTest', () => {
+        generateUnitTest(services);
+    });
+
+    const checkCompanyStandardsCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.checkCompanyStandards', () => {
+        checkCompanyStandards(services);
+    });
+
+    const findDuplicateLogicCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.findDuplicateLogic', () => {
+        findDuplicateLogic(services);
+    });
+
+    context.subscriptions.push(
+        analyzeFileCommand, 
+        analyzeWithGemmaCommand,
+        generateCodeCommand,
+        conceptualRefactorCommand,
+        showRecommendedModelsCommand,
+        explainCodeCommand,
+        generateUnitTestCommand,
+        checkCompanyStandardsCommand,
+        findDuplicateLogicCommand
+    );
 }
 
-/**
- * Realiza una refactorización conceptual del código seleccionado.
- */
+// ... (runConceptualRefactor y generateCodeFromComment sin cambios) ...
+
 async function runConceptualRefactor(services: ExtensionServices) {
     const editor = vscode.window.activeTextEditor;
     if (!editor || editor.selection.isEmpty) {
@@ -120,10 +139,6 @@ async function runConceptualRefactor(services: ExtensionServices) {
 }
 
 
-/**
- * Genera código a partir de un comentario especial en el editor.
- * @param services Los servicios de la extensión.
- */
 async function generateCodeFromComment(services: ExtensionServices) {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
@@ -135,13 +150,11 @@ async function generateCodeFromComment(services: ExtensionServices) {
     const line = editor.document.lineAt(position.line);
     const commentPrefix = '///';
 
-    // Verificar si la línea empieza con el prefijo especial
     if (!line.text.trim().startsWith(commentPrefix)) {
         vscode.window.showErrorMessage("Coloca el cursor en una línea que empiece con '///' seguido de tu instrucción.");
         return;
     }
 
-    // Extraer la instrucción
     const instruction = line.text.trim().substring(commentPrefix.length).trim();
     if (!instruction) {
         vscode.window.showInformationMessage("Escribe una instrucción después de '///'.");
@@ -158,17 +171,98 @@ async function generateCodeFromComment(services: ExtensionServices) {
         title: "Generando código con Ollama...",
         cancellable: false
     }, async (progress) => {
-        // Usamos el nuevo método del servicio
         const generatedCode = await ollamaService.generateCode(instruction, language, model);
 
         if (generatedCode) {
-            // Insertar el código generado debajo de la línea del comentario
             editor.edit(editBuilder => {
-                // Añadimos un salto de línea inicial para separar del comentario
                 const codeToInsert = `\n${generatedCode}`;
                 editBuilder.insert(new vscode.Position(position.line + 1, 0), codeToInsert);
             });
             vscode.window.showInformationMessage("¡Código generado e insertado!");
         }
     });
+}
+
+
+async function showRecommendedModels(services: ExtensionServices) {
+    const { ollamaService } = services;
+    const models = await ollamaService.getModels();
+    const modelNames = models.map(m => m.name);
+    vscode.window.showQuickPick(modelNames, {
+        placeHolder: 'Modelos de Ollama disponibles'
+    });
+}
+
+async function explainCode(services: ExtensionServices) {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor || editor.selection.isEmpty) {
+        vscode.window.showInformationMessage("Por favor, selecciona el código que quieres explicar.");
+        return;
+    }
+    const selectedCode = editor.document.getText(editor.selection);
+    const language = editor.document.languageId;
+    const { ollamaService } = services;
+    const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer');
+    const model = config.get<string>('model', 'codellama');
+
+    const explanation = await ollamaService.getExplanation(selectedCode, language, model);
+    if (explanation) {
+        vscode.window.showInformationMessage("Explicación del Código:", { modal: true, detail: explanation });
+    }
+}
+
+async function generateUnitTest(services: ExtensionServices) {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor || editor.selection.isEmpty) {
+        vscode.window.showInformationMessage("Por favor, selecciona el código para el que quieres generar una prueba unitaria.");
+        return;
+    }
+    const selectedCode = editor.document.getText(editor.selection);
+    const language = editor.document.languageId;
+    const { ollamaService } = services;
+    const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer');
+    const model = config.get<string>('model', 'codellama');
+
+    const test = await ollamaService.generateUnitTest(selectedCode, language, model);
+    if (test) {
+        const newDocument = await vscode.workspace.openTextDocument({
+            content: test,
+            language: language
+        });
+        vscode.window.showTextDocument(newDocument);
+    }
+}
+
+async function checkCompanyStandards(services: ExtensionServices) {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) return;
+
+    const document = editor.document;
+    const { ollamaService } = services;
+    const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer');
+    const model = config.get<string>('model', 'codellama');
+
+    const violations = await ollamaService.validateStandards(document.getText(), document.languageId, model);
+    if (violations) {
+        vscode.window.showWarningMessage("Violaciones de Estándares:", { modal: true, detail: violations });
+    } else {
+        vscode.window.showInformationMessage("El código cumple con los estándares de la empresa.");
+    }
+}
+
+async function findDuplicateLogic(services: ExtensionServices) {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) return;
+
+    const document = editor.document;
+    const { ollamaService } = services;
+    const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer');
+    const model = config.get<string>('model', 'codellama');
+
+    const duplicates = await ollamaService.findDuplicateLogic(document.getText(), document.languageId, model);
+    if (duplicates) {
+        vscode.window.showWarningMessage("Lógica Duplicada Encontrada:", { modal: true, detail: duplicates });
+    } else {
+        vscode.window.showInformationMessage("No se encontró lógica duplicada en el archivo.");
+    }
 }
