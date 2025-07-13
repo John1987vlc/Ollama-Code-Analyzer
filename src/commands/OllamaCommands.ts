@@ -2,6 +2,7 @@
 import * as vscode from 'vscode';
 import { getRelativeFilePath } from '../utils/pathUtils';
 import { CoreExtensionContext } from '../context/ExtensionContext';
+import { AnalysisReportWebview } from '../ui/webviews';
 
 export function registerOllamaCommands(coreCtx: CoreExtensionContext, vsCodeCtx: vscode.ExtensionContext) {
     const { ollamaService, codeAnalyzer, refactorProvider } = coreCtx;
@@ -54,6 +55,24 @@ export function registerOllamaCommands(coreCtx: CoreExtensionContext, vsCodeCtx:
     const generateUmlDiagramCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.generateUmlDiagram', () => {
         generateUmlDiagram(coreCtx);
     });
+     const showAnalysisReportCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.showAnalysisReport', async () => {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            vscode.window.showInformationMessage("Abre un archivo para analizar.");
+            return;
+        }
+
+        // 1. Ejecutar el análisis
+        const result = await coreCtx.codeAnalyzer.analyzeDocument(editor.document);
+
+        // 2. Crear o mostrar la Webview
+        AnalysisReportWebview.createOrShow(vsCodeCtx.extensionUri);
+
+        // 3. (Opcional) Enviar los resultados a la webview si ya existe
+        if (result && AnalysisReportWebview.currentPanel) {
+            AnalysisReportWebview.currentPanel.update(result);
+        }
+    });
 
 
     vsCodeCtx.subscriptions.push(
@@ -66,8 +85,9 @@ export function registerOllamaCommands(coreCtx: CoreExtensionContext, vsCodeCtx:
         generateUnitTestCommand,
         checkCompanyStandardsCommand,
         findDuplicateLogicCommand,
-        generateUmlDiagramCommand
-
+        generateUmlDiagramCommand,
+        showAnalysisReportCommand,
+        findSuggestionsCommand
     );
 }
 
