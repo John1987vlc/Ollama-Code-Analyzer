@@ -1,6 +1,6 @@
 // src/services/CodeAnalyzer.ts
 import * as vscode from 'vscode';
-import { OllamaService } from './OllamaService';
+import { OllamaService } from '../api/OllamaService';
 import { PromptingService } from './PromptingService';
 import { createHash } from 'crypto';
 
@@ -48,6 +48,7 @@ export class CodeAnalyzer {
         if (document.isUntitled || document.lineCount > maxLines) {
             return null;
         }
+
         const code = document.getText();
         const cacheKey = this.generateCacheKey(document.uri.toString(), code);
 

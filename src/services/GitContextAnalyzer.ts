@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import { GiteaService, GiteaIssue, GiteaPullRequest, GiteaCommit } from './GiteaService';
-import { OllamaService } from './OllamaService';
+import { GiteaService, GiteaIssue, GiteaPullRequest, GiteaCommit } from '../api/GiteaService';
+import { OllamaService } from '../api/OllamaService';
 import { getRelativeFilePath } from '../utils/pathUtils';
 
 // --- Interfaces (sin cambios) ---

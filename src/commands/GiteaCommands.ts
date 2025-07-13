@@ -1,13 +1,13 @@
 // src/commands/giteaCommands.ts
 
 import * as vscode from 'vscode';
-import { ExtensionServices } from '../extension'; // Importamos la interfaz de servicios
+import { CoreExtensionContext } from '../context/ExtensionContext'; // Importamos la interfaz de servicios
 import { getRelativeFilePath } from '../utils/pathUtils'; // Importamos la utilidad
 import { updateGiteaStatusBar } from '../ui/statusBar'; // Importamos el actualizador de UI
 
 export function registerGiteaCommands(
   context: vscode.ExtensionContext,
-  services: ExtensionServices, // [CORREGIDO] Usamos el objeto de servicios unificado
+  services: CoreExtensionContext, // [CORREGIDO] Usamos el objeto de servicios unificado
   giteaStatusBarItem: vscode.StatusBarItem // Pasamos el item para poder actualizarlo
 ) {
   // Desestructuramos los servicios que vamos a necesitar

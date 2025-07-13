@@ -1,95 +1,48 @@
+// src/extension.ts
 import * as vscode from 'vscode';
-import { OllamaService } from './services/OllamaService';
-import { CodeAnalyzer } from './services/CodeAnalyzer';
-import { GiteaService } from './services/GiteaService';
-import { GitContextAnalyzer } from './services/GitContextAnalyzer';
-import { GitContextTreeProvider } from './providers/GitContextTreeProvider';
-import { registerOllamaCommands } from './commands/OllamaCommands';
-import { registerGiteaCommands } from './commands/GiteaCommands';
+import { CoreExtensionContext } from './context/ExtensionContext';
+import { registerAllCommands } from './commands/index';
 import { registerEventListeners } from './events/listeners';
-import { updateGiteaStatusBar } from './ui/statusBar';
 import { checkServicesAvailability } from './utils/startupChecks';
-import { RefactorProvider } from './providers/RefactorProvider';
+import { updateGiteaStatusBar } from './ui/statusBar';
+import {RefactorProvider} from './providers/RefactorProvider';
 
-/**
- * Contenedor de servicios para pasarlos fácilmente a otros módulos.
- */
-export interface ExtensionServices {
-    ollamaService: OllamaService;
-    codeAnalyzer: CodeAnalyzer;
-    giteaService: GiteaService;
-    gitContextAnalyzer: GitContextAnalyzer;
-    gitContextProvider: GitContextTreeProvider;
-}
+let coreContext: CoreExtensionContext;
 
-/**
- * Función principal que se ejecuta cuando la extensión es activada.
- */
 export function activate(context: vscode.ExtensionContext) {
     console.log('Activando extensión "Ollama Code Analyzer"...');
 
-    const ollamaService = new OllamaService();
-    const codeAnalyzer = new CodeAnalyzer(ollamaService);
-    const giteaService = new GiteaService();
-    const gitContextAnalyzer = new GitContextAnalyzer(giteaService, ollamaService);
-    const gitContextProvider = new GitContextTreeProvider(giteaService);
+    // 1. Inicializar el contexto central
+    coreContext = new CoreExtensionContext(context);
 
-    const services: ExtensionServices = {
-        ollamaService,
-        codeAnalyzer,
-        giteaService,
-        gitContextAnalyzer,
-        gitContextProvider
-    };
-
+    // 2. Registrar componentes de la UI
+    const giteaStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
     const gitContextView = vscode.window.createTreeView('giteaContext', {
-        treeDataProvider: gitContextProvider,
+        treeDataProvider: coreContext.gitContextProvider,
         showCollapseAll: true
     });
 
-    const giteaStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-
-    registerOllamaCommands(context, services);
-    registerGiteaCommands(context, services, giteaStatusBarItem);
-    registerEventListeners(context, services, giteaStatusBarItem);
-
-    const refactorDiagnosticCollection = vscode.languages.createDiagnosticCollection('ollama-refactor');
-    const refactorProvider = new RefactorProvider(services, refactorDiagnosticCollection);
-
+    // 3. Registrar todos los comandos, proveedores y listeners
+    registerAllCommands(coreContext, context,giteaStatusBarItem);
+    registerEventListeners(context,coreContext, giteaStatusBarItem);
+    
     const codeActionProvider = vscode.languages.registerCodeActionsProvider(
         ['javascript', 'typescript', 'python', 'java', 'csharp'],
-        refactorProvider,
-        RefactorProvider.metadata
+        coreContext.refactorProvider,
+        { providedCodeActionKinds: RefactorProvider.metadata.providedCodeActionKinds }
     );
 
-    const findSuggestionsCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.findSuggestions', () => {
-        const editor = vscode.window.activeTextEditor;
-        if (editor) {
-            vscode.window.withProgress({
-                location: vscode.ProgressLocation.Notification,
-                title: 'Buscando sugerencias de código con Ollama...',
-                cancellable: false
-            }, () => refactorProvider.updateDiagnostics(editor.document));
-        }
-    });
-
-    const onDidSaveListener = vscode.workspace.onDidSaveTextDocument(document => {
-        const editor = vscode.window.activeTextEditor;
-        if (editor && editor.document === document) {
-            refactorProvider.updateDiagnostics(document);
-        }
-    });
-
+    // 4. Añadir elementos al array de suscripciones para que VS Code los gestione
     context.subscriptions.push(
-        gitContextView,
+        coreContext,
         giteaStatusBarItem,
-        refactorDiagnosticCollection,
-        codeActionProvider,
-        findSuggestionsCommand,
-        onDidSaveListener
+        gitContextView,
+        codeActionProvider
     );
 
-    checkServicesAvailability(ollamaService, giteaService, giteaStatusBarItem);
+    // 5. Realizar comprobaciones de inicio
+    checkServicesAvailability(coreContext.ollamaService, coreContext.giteaService, giteaStatusBarItem)
+        .then(() => updateGiteaStatusBar(coreContext.giteaService, giteaStatusBarItem));
 
     console.log('Extensión "Ollama Code Analyzer" activada y lista.');
 }

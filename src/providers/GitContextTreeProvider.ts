@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { GiteaService, GiteaIssue, GiteaPullRequest, GiteaCommit } from '../services/GiteaService';
+import { GiteaService, GiteaIssue, GiteaPullRequest, GiteaCommit } from '../api/GiteaService';
 import path = require('path');
 
 // [MEJORA] Usar un tipo estricto para los contextos previene errores de tipeo.

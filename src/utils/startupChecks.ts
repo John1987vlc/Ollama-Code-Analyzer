@@ -1,8 +1,8 @@
 // src/utils/startupChecks.ts
 
 import * as vscode from 'vscode';
-import { OllamaService } from '../services/OllamaService';
-import { GiteaService } from '../services/GiteaService';
+import { OllamaService } from '../api/OllamaService';
+import { GiteaService } from '../api/GiteaService';
 import { updateGiteaStatusBar } from '../ui/statusBar';
 
 /**

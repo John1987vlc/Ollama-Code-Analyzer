@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { ExtensionServices } from '../extension';
+import { CoreExtensionContext } from '../context/ExtensionContext';
 
 const severityMap = {
     'Warning': vscode.DiagnosticSeverity.Warning,
@@ -23,7 +23,7 @@ export class RefactorProvider implements vscode.CodeActionProvider {
     };
 
     constructor(
-        private services: ExtensionServices,
+        private services: CoreExtensionContext,
         private diagnosticCollection: vscode.DiagnosticCollection
     ) {}
 

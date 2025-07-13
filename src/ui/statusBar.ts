@@ -1,7 +1,7 @@
 // src/ui/statusBar.ts
 
 import * as vscode from 'vscode';
-import { GiteaService } from '../services/GiteaService';
+import { GiteaService } from '../api/GiteaService';
 
 /**
  * Actualiza el texto, el tooltip y el color del StatusBarItem de Gitea

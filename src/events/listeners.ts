@@ -1,12 +1,12 @@
 // src/events/listeners.ts
 
 import * as vscode from 'vscode';
-import { ExtensionServices } from '../extension';
+import { CoreExtensionContext } from '../context/ExtensionContext';
 import { runAnalysis } from '../commands/OllamaCommands';
 import { debounce } from '../utils/debounce'; // Moveremos la función aquí
 import { getRelativeFilePath } from '../utils/pathUtils';
 
-export function registerEventListeners(context: vscode.ExtensionContext, services: ExtensionServices,giteaStatusBarItem: vscode.StatusBarItem ) {
+export function registerEventListeners(context: vscode.ExtensionContext, services: CoreExtensionContext,giteaStatusBarItem: vscode.StatusBarItem ) {
     const { gitContextProvider } = services;
 
     const debouncedAnalysis = debounce((document: vscode.TextDocument) => {

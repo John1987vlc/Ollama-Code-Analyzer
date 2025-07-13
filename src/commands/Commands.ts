@@ -1,6 +1,6 @@
 // src/commands/commands.ts
 import * as vscode from 'vscode';
-import { OllamaService } from '../services/OllamaService';
+import { OllamaService } from '../api/OllamaService';
 import { CodeAnalyzer } from '../services/CodeAnalyzer';
 
 export function registerCommands(

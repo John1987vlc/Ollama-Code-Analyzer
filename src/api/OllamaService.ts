@@ -2,7 +2,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { PromptingService } from './PromptingService';
+import { PromptingService } from '../services/PromptingService';
 
 // ... (interfaces sin cambios) ...
 interface GenerateOptions {

@@ -1,13 +1,79 @@
 // src/commands/OllamaCommands.ts
-
 import * as vscode from 'vscode';
-import { ExtensionServices } from '../extension';
 import { getRelativeFilePath } from '../utils/pathUtils';
+import { CoreExtensionContext } from '../context/ExtensionContext';
 
+export function registerOllamaCommands(coreCtx: CoreExtensionContext, vsCodeCtx: vscode.ExtensionContext) {
+    const { ollamaService, codeAnalyzer, refactorProvider } = coreCtx;
+
+    const findSuggestionsCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.findSuggestions', async () => {
+        const editor = vscode.window.activeTextEditor;
+        if (editor) {
+            await vscode.window.withProgress({
+                location: vscode.ProgressLocation.Notification,
+                title: 'Buscando sugerencias con Ollama...',
+            }, () => refactorProvider.updateDiagnostics(editor.document));
+        }
+    });
+       const analyzeFileCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.analyzeCurrentFile', () => {
+        runAnalysis(vscode.window.activeTextEditor?.document, coreCtx);
+    });
+
+    const analyzeWithGemmaCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.analyzeWithGemma', () => {
+        runAnalysis(vscode.window.activeTextEditor?.document, coreCtx);
+    });
+
+    const generateCodeCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.generateCodeFromComment', () => {
+        generateCodeFromComment(coreCtx);
+    });
+
+    const conceptualRefactorCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.conceptualRefactor', () => {
+        runConceptualRefactor(coreCtx);
+    });
+
+    const showRecommendedModelsCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.showRecommendedModels', () => {
+        showRecommendedModels(coreCtx);
+    });
+
+    const explainCodeCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.explainCode', () => {
+        explainCode(coreCtx);
+    });
+
+    const generateUnitTestCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.generateUnitTest', () => {
+        generateUnitTest(coreCtx);
+    });
+
+    const checkCompanyStandardsCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.checkCompanyStandards', () => {
+        checkCompanyStandards(coreCtx);
+    });
+
+    const findDuplicateLogicCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.findDuplicateLogic', () => {
+        findDuplicateLogic(coreCtx);
+    });
+    
+    const generateUmlDiagramCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.generateUmlDiagram', () => {
+        generateUmlDiagram(coreCtx);
+    });
+
+
+    vsCodeCtx.subscriptions.push(
+        analyzeFileCommand, 
+        analyzeWithGemmaCommand,
+        generateCodeCommand,
+        conceptualRefactorCommand,
+        showRecommendedModelsCommand,
+        explainCodeCommand,
+        generateUnitTestCommand,
+        checkCompanyStandardsCommand,
+        findDuplicateLogicCommand,
+        generateUmlDiagramCommand
+
+    );
+}
 
 export async function runAnalysis(
     document: vscode.TextDocument | undefined,
-    services: ExtensionServices
+    services: CoreExtensionContext
 ) {
     if (!document) {
         vscode.window.showInformationMessage("Por favor, abre un archivo para analizar.");
@@ -44,65 +110,9 @@ export async function runAnalysis(
 }
 
 
-export function registerOllamaCommands(context: vscode.ExtensionContext, services: ExtensionServices) {
-    const analyzeFileCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.analyzeCurrentFile', () => {
-        runAnalysis(vscode.window.activeTextEditor?.document, services);
-    });
-
-    const analyzeWithGemmaCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.analyzeWithGemma', () => {
-        runAnalysis(vscode.window.activeTextEditor?.document, services);
-    });
-
-    const generateCodeCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.generateCodeFromComment', () => {
-        generateCodeFromComment(services);
-    });
-
-    const conceptualRefactorCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.conceptualRefactor', () => {
-        runConceptualRefactor(services);
-    });
-
-    const showRecommendedModelsCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.showRecommendedModels', () => {
-        showRecommendedModels(services);
-    });
-
-    const explainCodeCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.explainCode', () => {
-        explainCode(services);
-    });
-
-    const generateUnitTestCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.generateUnitTest', () => {
-        generateUnitTest(services);
-    });
-
-    const checkCompanyStandardsCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.checkCompanyStandards', () => {
-        checkCompanyStandards(services);
-    });
-
-    const findDuplicateLogicCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.findDuplicateLogic', () => {
-        findDuplicateLogic(services);
-    });
-    
-    const generateUmlDiagramCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.generateUmlDiagram', () => {
-        generateUmlDiagram(services);
-    });
 
 
-    context.subscriptions.push(
-        analyzeFileCommand, 
-        analyzeWithGemmaCommand,
-        generateCodeCommand,
-        conceptualRefactorCommand,
-        showRecommendedModelsCommand,
-        explainCodeCommand,
-        generateUnitTestCommand,
-        checkCompanyStandardsCommand,
-        findDuplicateLogicCommand,
-        generateUmlDiagramCommand
-
-    );
-}
-
-
-async function runConceptualRefactor(services: ExtensionServices) {
+async function runConceptualRefactor(services: CoreExtensionContext) {
     const editor = vscode.window.activeTextEditor;
     if (!editor || editor.selection.isEmpty) {
         vscode.window.showInformationMessage("Por favor, selecciona el bloque de código que quieres refactorizar.");
@@ -151,7 +161,7 @@ async function runConceptualRefactor(services: ExtensionServices) {
 }
 
 
-async function generateCodeFromComment(services: ExtensionServices) {
+async function generateCodeFromComment(services: CoreExtensionContext) {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
         vscode.window.showInformationMessage("Abre un archivo y coloca el cursor en la línea del comentario para generar código.");
@@ -201,7 +211,7 @@ async function generateCodeFromComment(services: ExtensionServices) {
     });
 }
 
-async function generateUmlDiagram(services: ExtensionServices) {
+async function generateUmlDiagram(services: CoreExtensionContext) {
     const { ollamaService } = services;
     const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer');
     const model = config.get<string>('model', 'codellama');
@@ -255,7 +265,7 @@ async function generateUmlDiagram(services: ExtensionServices) {
 }
 
 
-async function showRecommendedModels(services: ExtensionServices) {
+async function showRecommendedModels(services: CoreExtensionContext) {
     const { ollamaService } = services;
     const models = await ollamaService.getModels();
     const modelNames = models.map(m => m.name);
@@ -265,7 +275,7 @@ async function showRecommendedModels(services: ExtensionServices) {
 }
 
 
-async function explainCode(services: ExtensionServices) {
+async function explainCode(services: CoreExtensionContext) {
     const editor = vscode.window.activeTextEditor;
     if (!editor || editor.selection.isEmpty) {
         vscode.window.showInformationMessage("Por favor, selecciona el código que quieres explicar.");
@@ -290,7 +300,7 @@ async function explainCode(services: ExtensionServices) {
 }
 
 
-async function generateUnitTest(services: ExtensionServices) {
+async function generateUnitTest(services: CoreExtensionContext) {
     const editor = vscode.window.activeTextEditor;
     if (!editor || editor.selection.isEmpty) {
         vscode.window.showInformationMessage("Por favor, selecciona el código para el que quieres generar una prueba unitaria.");
@@ -312,7 +322,7 @@ async function generateUnitTest(services: ExtensionServices) {
     }
 }
 
-async function checkCompanyStandards(services: ExtensionServices) {
+async function checkCompanyStandards(services: CoreExtensionContext) {
     const editor = vscode.window.activeTextEditor;
     if (!editor) return;
 
@@ -329,7 +339,7 @@ async function checkCompanyStandards(services: ExtensionServices) {
     }
 }
 
-async function findDuplicateLogic(services: ExtensionServices) {
+async function findDuplicateLogic(services: CoreExtensionContext) {
     const editor = vscode.window.activeTextEditor;
     if (!editor) return;
 
