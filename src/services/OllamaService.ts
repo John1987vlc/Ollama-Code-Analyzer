@@ -41,7 +41,8 @@ interface ConceptualRefactoringResult {
 }
 
 export class OllamaService {
-  private readonly baseUrl = '[http://127.0.0.1:11434](http://127.0.0.1:11434)';
+  // [CORRECCIÓN] Se ha eliminado el formato Markdown de la URL.
+  private readonly baseUrl = 'http://127.0.0.1:11434';
   private readonly timeoutMs = 30000;
   private promptingService: PromptingService;
 
@@ -182,6 +183,27 @@ export class OllamaService {
       const response = await this.generate(prompt, model);
       return response?.response || null;
   }
+
+  public async generateUmlDiagram(files: { path: string, content: string }[], model: string): Promise<string | null> {
+    try {
+        const prompt = await this.promptingService.getUmlGenerationPrompt(files);
+        const response = await this.generate(prompt, model, {
+            temperature: 0.1,
+            stream: false
+        });
+        
+        if (!response?.response) return null;
+        
+        const umlMatch = response.response.match(/@startuml([\s\S]*)@enduml/);
+        return umlMatch ? `@startuml${umlMatch[1]}@enduml` : null;
+
+    } catch (error) {
+        console.error('Error generando diagrama UML:', error);
+        vscode.window.showErrorMessage(`Error generando diagrama UML: ${(error as Error).message}`);
+        return null;
+    }
+}
+
 
   public async generate(prompt: string, model: string, options: GenerateOptions = {}): Promise<GenerateResponse | null> {
     const { temperature = 0.5, maxTokens = 1024, stream = false } = options;

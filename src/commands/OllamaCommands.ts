@@ -4,7 +4,7 @@ import * as vscode from 'vscode';
 import { ExtensionServices } from '../extension';
 import { getRelativeFilePath } from '../utils/pathUtils';
 
-// ... (runAnalysis sin cambios) ...
+
 export async function runAnalysis(
     document: vscode.TextDocument | undefined,
     services: ExtensionServices
@@ -80,6 +80,11 @@ export function registerOllamaCommands(context: vscode.ExtensionContext, service
     const findDuplicateLogicCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.findDuplicateLogic', () => {
         findDuplicateLogic(services);
     });
+    
+    const generateUmlDiagramCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.generateUmlDiagram', () => {
+        generateUmlDiagram(services);
+    });
+
 
     context.subscriptions.push(
         analyzeFileCommand, 
@@ -90,11 +95,12 @@ export function registerOllamaCommands(context: vscode.ExtensionContext, service
         explainCodeCommand,
         generateUnitTestCommand,
         checkCompanyStandardsCommand,
-        findDuplicateLogicCommand
+        findDuplicateLogicCommand,
+        generateUmlDiagramCommand
+
     );
 }
 
-// ... (runConceptualRefactor y generateCodeFromComment sin cambios) ...
 
 async function runConceptualRefactor(services: ExtensionServices) {
     const editor = vscode.window.activeTextEditor;
@@ -109,7 +115,13 @@ async function runConceptualRefactor(services: ExtensionServices) {
 
     const { ollamaService } = services;
     const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer');
-    const model = config.get<string>('model', 'codellama');
+    // [CORREGIDO] Se elimina el fallback para usar el default de package.json
+    const model = config.get<string>('model');
+
+    if (!model) {
+        vscode.window.showErrorMessage("No se ha configurado un modelo de Ollama en los ajustes.");
+        return;
+    }
 
     vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
@@ -163,8 +175,14 @@ async function generateCodeFromComment(services: ExtensionServices) {
 
     const { ollamaService } = services;
     const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer');
-    const model = config.get<string>('model', 'codellama');
+    // [CORREGIDO] Se elimina el fallback
+    const model = config.get<string>('model');
     const language = editor.document.languageId;
+
+    if (!model) {
+        vscode.window.showErrorMessage("No se ha configurado un modelo de Ollama en los ajustes.");
+        return;
+    }
 
     vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
@@ -183,6 +201,59 @@ async function generateCodeFromComment(services: ExtensionServices) {
     });
 }
 
+async function generateUmlDiagram(services: ExtensionServices) {
+    const { ollamaService } = services;
+    const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer');
+    const model = config.get<string>('model', 'codellama');
+
+    await vscode.window.withProgress({
+        location: vscode.ProgressLocation.Notification,
+        title: "Analizando archivos para generar diagrama UML...",
+        cancellable: true
+    }, async (progress, token) => {
+        // Encuentra todos los archivos relevantes (ej. TypeScript)
+        const filesUri = await vscode.workspace.findFiles('src/**/*.ts', '**/node_modules/**');
+        
+        if (token.isCancellationRequested) return;
+
+        if (filesUri.length === 0) {
+            vscode.window.showInformationMessage("No se encontraron archivos TypeScript en la carpeta 'src' para generar el diagrama.");
+            return;
+        }
+
+        progress.report({ message: `Leyendo ${filesUri.length} archivos...` });
+
+        const fileContents = await Promise.all(
+            filesUri.map(async uri => {
+                const document = await vscode.workspace.openTextDocument(uri);
+                return {
+                    path: vscode.workspace.asRelativePath(uri),
+                    content: document.getText()
+                };
+            })
+        );
+        
+        if (token.isCancellationRequested) return;
+
+        progress.report({ message: 'Generando diagrama con Ollama...', increment: 50 });
+
+        const umlCode = await ollamaService.generateUmlDiagram(fileContents, model);
+
+        if (token.isCancellationRequested) return;
+
+        if (umlCode) {
+            const newDocument = await vscode.workspace.openTextDocument({
+                content: umlCode,
+                language: 'plantuml' // Asume que el usuario tiene una extensión de PlantUML
+            });
+            vscode.window.showTextDocument(newDocument);
+            vscode.window.showInformationMessage("¡Diagrama PlantUML generado!");
+        } else {
+            vscode.window.showErrorMessage("Ollama no pudo generar el diagrama UML.");
+        }
+    });
+}
+
 
 async function showRecommendedModels(services: ExtensionServices) {
     const { ollamaService } = services;
@@ -192,6 +263,7 @@ async function showRecommendedModels(services: ExtensionServices) {
         placeHolder: 'Modelos de Ollama disponibles'
     });
 }
+
 
 async function explainCode(services: ExtensionServices) {
     const editor = vscode.window.activeTextEditor;
@@ -203,13 +275,20 @@ async function explainCode(services: ExtensionServices) {
     const language = editor.document.languageId;
     const { ollamaService } = services;
     const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer');
-    const model = config.get<string>('model', 'codellama');
+    // [CORREGIDO] Se elimina el fallback
+    const model = config.get<string>('model');
+
+    if (!model) {
+        vscode.window.showErrorMessage("No se ha configurado un modelo de Ollama en los ajustes.");
+        return;
+    }
 
     const explanation = await ollamaService.getExplanation(selectedCode, language, model);
     if (explanation) {
         vscode.window.showInformationMessage("Explicación del Código:", { modal: true, detail: explanation });
     }
 }
+
 
 async function generateUnitTest(services: ExtensionServices) {
     const editor = vscode.window.activeTextEditor;

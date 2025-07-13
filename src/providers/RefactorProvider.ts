@@ -33,10 +33,11 @@ export class RefactorProvider implements vscode.CodeActionProvider {
         }
 
         try {
-            const { ollamaService } = this.services;
+              const { ollamaService } = this.services;
             const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer');
-            const model = config.get<string>('model', 'codellama');
-
+            // [CORREGIDO] Se elimina el fallback
+            const model = config.get<string>('model');
+             if (!model) { return; }
             // Inicializar como array vacío
             let suggestions: ICodeSuggestion[] = [];
             
@@ -159,10 +160,12 @@ Return only valid JSON array, no explanations:`;
         diagnostic: vscode.Diagnostic
     ): Promise<vscode.CodeAction | null> {
         try {
-            const { ollamaService } = this.services;
+              const { ollamaService } = this.services;
             const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer');
-            const model = config.get<string>('model', 'codellama');
-
+            // [CORREGIDO] Se elimina el fallback
+            const model = config.get<string>('model');
+            
+            if (!model) { return null; }
             const codeBlock = document.getText(diagnostic.range);
             const instruction = diagnostic.message;
 

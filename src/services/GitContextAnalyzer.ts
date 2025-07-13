@@ -118,14 +118,20 @@ export class GitContextAnalyzer {
   /**
    * Invoca al LLM con un prompt enriquecido para analizar el código.
    */
-  private async analyzeCodeWithContext(
-    document: vscode.TextDocument,
-    gitContext: GitContext,
-    modelOverride?: string
-  ): Promise<LLMCodeAnalysis | null> {
-    const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer');
-    const model = modelOverride || config.get<string>('model', 'codellama');
+  
+    private async analyzeCodeWithContext(
+        document: vscode.TextDocument,
+        gitContext: GitContext,
+        modelOverride?: string
+    ): Promise<LLMCodeAnalysis | null> {
+        const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer');
+        // [CORREGIDO] Se elimina el fallback
+        const model = modelOverride || config.get<string>('model');
 
+        if (!model) {
+            vscode.window.showErrorMessage("No se ha configurado un modelo de Ollama en los ajustes para el análisis contextual.");
+            return null;
+        }
     const recentChanges = gitContext.recentCommits
       .slice(0, 3)
       .map(commit => `- "${commit.commit.message.split('\n')[0]}" por ${commit.commit.author.name}`) // Tomar solo la primera línea del mensaje

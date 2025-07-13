@@ -80,6 +80,11 @@
         "command": "ollamaCodeAnalyzer.findDuplicateLogic",
         "title": "Detectar lógica duplicada",
         "category": "Gemma3n Analysis"
+      },
+      {
+        "command": "ollamaCodeAnalyzer.generateUmlDiagram",
+        "title": "Generar Diagrama UML del proyecto",
+        "category": "Gemma3n Analysis"
       }
     ],
     "submenus": [
@@ -128,6 +133,10 @@
         {
           "command": "ollamaCodeAnalyzer.generateCodeFromComment",
           "group": "3_generation@1"
+        },
+        {
+          "command": "ollamaCodeAnalyzer.generateUmlDiagram",
+          "group": "3_generation@2"
         },
         {
           "command": "ollamaCodeAnalyzer.configureModel",

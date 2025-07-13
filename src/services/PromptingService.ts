@@ -30,7 +30,7 @@ export class PromptingService {
         }
     }
 
-    private buildPrompt(templateKey: keyof typeof this.promptTemplates, replacements: Record<string, string>): string {
+    private buildPrompt(templateKey: keyof typeof this.promptTemplates, replacements: Record<string, any>): string {
         const template = this.promptTemplates[templateKey];
         if (!template) {
             throw new Error(`No se encontró la plantilla de prompt para: ${String(templateKey)}`);
@@ -46,12 +46,20 @@ export class PromptingService {
 
         // Aplicar los reemplazos de variables
         for (const key in replacements) {
-            prompt = prompt.replace(new RegExp(`\\$\\{${key}\\}`, 'g'), replacements[key]);
+            if (typeof replacements[key] === 'string') {
+                 prompt = prompt.replace(new RegExp(`\\$\\{${key}\\}`, 'g'), replacements[key]);
+            }
         }
         
         // Añadir el código o la instrucción del usuario al final
         if(replacements.code) {
             prompt += `--- \nCode to Analyze (${replacements.language}):\n\`\`\`${replacements.language}\n${replacements.code}\n\`\`\``
+        } else if (replacements.files) {
+            // Manejar múltiples archivos para el diagrama UML
+            prompt += `--- \nProject Files to Analyze:\n\n`;
+            for (const file of replacements.files) {
+                prompt += `// FILE: ${file.path}\n\`\`\`\n${file.content}\n\`\`\`\n\n`;
+            }
         }
 
         if(replacements.instruction) {
@@ -101,5 +109,9 @@ export class PromptingService {
 
     public async getDuplicateDetectionPrompt(code: string, languageId: string): Promise<string> {
         return this.buildPrompt('duplicate_detection', { language: languageId, code });
+    }
+
+    public async getUmlGenerationPrompt(files: { path: string, content: string }[]): Promise<string> {
+        return this.buildPrompt('uml_generation', { files });
     }
 }

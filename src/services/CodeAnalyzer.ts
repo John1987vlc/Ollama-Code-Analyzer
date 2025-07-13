@@ -1,18 +1,17 @@
 // src/services/CodeAnalyzer.ts
 import * as vscode from 'vscode';
 import { OllamaService } from './OllamaService';
-import { PromptingService } from './PromptingService'; // Importamos el servicio de prompts
+import { PromptingService } from './PromptingService';
 import { createHash } from 'crypto';
 
-// ... (interfaces sin cambios) ...
 export interface CodeSuggestion {
     line: number;
     column: number;
-    endLine?: number; // Opcional: línea donde termina la sugerencia
-    endColumn?: number; // Opcional: columna donde termina la sugerencia
+    endLine?: number;
+    endColumn?: number;
     message: string;
     severity: 'error' | 'warning' | 'info';
-    code?: string; // Código sugerido para reemplazar el original
+    code?: string;
 }
 
 export interface AnalysisResult {
@@ -21,28 +20,34 @@ export interface AnalysisResult {
     timestamp: Date;
 }
 
-
 export class CodeAnalyzer {
     private diagnosticCollection: vscode.DiagnosticCollection;
     private outputChannel: vscode.OutputChannel;
     private analysisCache = new Map<string, AnalysisResult>();
-    private promptingService: PromptingService; // Añadimos el servicio
+    private promptingService: PromptingService;
 
     constructor(private ollamaService: OllamaService) {
         this.diagnosticCollection = vscode.languages.createDiagnosticCollection('ollamaCodeAnalyzer');
         this.outputChannel = vscode.window.createOutputChannel('Ollama Code Analyzer');
-        this.promptingService = new PromptingService(); // Lo instanciamos
+        this.promptingService = new PromptingService();
     }
 
+   
     async analyzeDocument(document: vscode.TextDocument, modelOverride?: string): Promise<AnalysisResult | null> {
         const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer');
-        const model = modelOverride || config.get<string>('model', 'codellama:latest');
+        // [CORREGIDO] Se elimina el fallback y se usa el override o el de la config
+        const model = modelOverride || config.get<string>('model');
         const maxLines = config.get<number>('maxLines', 200);
+
+        if (!model) {
+            // No mostramos error aquí para no ser intrusivos en cada análisis.
+            console.error("No se ha configurado un modelo de Ollama en los ajustes.");
+            return null;
+        }
 
         if (document.isUntitled || document.lineCount > maxLines) {
             return null;
         }
-
         const code = document.getText();
         const cacheKey = this.generateCacheKey(document.uri.toString(), code);
 
@@ -53,9 +58,7 @@ export class CodeAnalyzer {
         }
 
         try {
-            // Ahora usamos el promptingService para obtener el prompt
             const prompt = await this.promptingService.getAnalysisPrompt(code, document.languageId);
-
             const response = await this.ollamaService.generate(prompt, model, {
                 temperature: 0.1,
                 top_p: 0.9
@@ -77,8 +80,6 @@ export class CodeAnalyzer {
             return null;
         }
     }
-
-    // Se elimina el método `createAnalysisPrompt` de aquí.
 
     private parseAnalysisResponse(response: string): AnalysisResult {
         try {
@@ -105,28 +106,22 @@ export class CodeAnalyzer {
         }
     }
     
-    // ... (resto de métodos sin cambios: updateDiagnostics, mapSeverity, etc.) ...
     private updateDiagnostics(document: vscode.TextDocument, result: AnalysisResult) {
         const diagnostics: vscode.Diagnostic[] = result.suggestions.map(suggestion => {
-            const line = Math.max(0, suggestion.line - 1); // VSCode es 0-indexado
+            const line = Math.max(0, suggestion.line - 1);
             const column = Math.max(0, suggestion.column - 1);
-
-            // Usa las coordenadas de fin si están disponibles, si no, subraya toda la línea.
             const endLine = suggestion.endLine ? Math.max(0, suggestion.endLine - 1) : line;
             let endColumn;
             if (suggestion.endColumn) {
                 endColumn = Math.max(0, suggestion.endColumn - 1);
             } else {
-                // Alternativa: Subrayar hasta el final de la línea del problema
                 endColumn = document.lineAt(line).range.end.character;
             }
             
             const range = new vscode.Range(line, column, endLine, endColumn);
-            
             const severity = this.mapSeverity(suggestion.severity);
             const diagnostic = new vscode.Diagnostic(range, suggestion.message, severity);
             diagnostic.source = 'Ollama Code Analyzer';
-            // Opcional: si quieres usar `suggestion.code` para una acción rápida
             diagnostic.code = suggestion.code; 
             
             return diagnostic;
@@ -147,5 +142,23 @@ export class CodeAnalyzer {
     private generateCacheKey(uri: string, content: string): string {
         const hash = createHash('sha256').update(content).digest('hex');
         return `${uri}:${hash}`;
+    }
+
+    /** Limpia la caché de análisis. */
+    clearCache() {
+        this.analysisCache.clear();
+        this.outputChannel.appendLine('Caché de análisis limpiada.');
+    }
+
+    /** Limpia todos los diagnósticos visibles. */
+    clearDiagnostics() {
+        this.diagnosticCollection.clear();
+    }
+
+    /** Libera los recursos utilizados por la clase. */
+    dispose() {
+        this.clearDiagnostics();
+        this.diagnosticCollection.dispose();
+        this.outputChannel.dispose();
     }
 }
