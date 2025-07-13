@@ -328,9 +328,11 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
-    "test": "mocha -r ts-node/register ./out/test/*.test.js"
+    "test": "mocha -r ts-node/register ./out/test/*.test.js",
+    "package:clean": "npm run build && vsce package"
   },
   "devDependencies": {
+    "@types/markdown-it": "^14.1.2",
     "@types/mocha": "^10.0.10",
     "@types/node": "16.x",
     "@types/node-fetch": "^2.6.12",
@@ -340,6 +342,7 @@
     "cpx": "^1.5.0",
     "eslint": "^8.57.0",
     "mocha": "^11.7.1",
+    "rimraf": "^5.0.0",
     "ts-node": "^10.9.2",
     "typescript": "^4.9.5"
   },
@@ -353,6 +356,7 @@
   "homepage": "https://github.com/John1987vlc/Ollama-Code-Analyzer#readme",
   "license": "CC0-1.0",
   "dependencies": {
+    "markdown-it": "^14.1.0",
     "node-fetch": "^2.7.0"
   }
 }

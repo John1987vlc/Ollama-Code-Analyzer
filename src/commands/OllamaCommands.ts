@@ -30,15 +30,18 @@ export async function runAnalysis(
         const prompt = await coreCtx.promptingService.getAnalysisPrompt(document.getText(), document.languageId);
         const result = await coreCtx.ollamaService.generate(prompt, model);
 
-        if (result && result.response && UnifiedResponseWebview.currentPanel) {
-            UnifiedResponseWebview.currentPanel.showResponse(result.response, result.prompt);
-        } else if (UnifiedResponseWebview.currentPanel) {
-            UnifiedResponseWebview.currentPanel.showResponse("Ollama no devolvió una respuesta válida.", "Error de Respuesta");
-        }
+       
+    if (result && result.response && UnifiedResponseWebview.currentPanel) {
+        // [CORREGIDO] Solo pasamos la respuesta. El prompt ya no es necesario aquí.
+        UnifiedResponseWebview.currentPanel.showResponse(result.response);
+    } else if (UnifiedResponseWebview.currentPanel) {
+        // [CORREGIDO]
+        UnifiedResponseWebview.currentPanel.showResponse("Ollama no devolvió una respuesta válida.");
+    }
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : "Error desconocido";
         if (UnifiedResponseWebview.currentPanel) {
-            UnifiedResponseWebview.currentPanel.showResponse(`Error durante el análisis: ${errorMessage}`, "Error de Ejecución");
+            UnifiedResponseWebview.currentPanel.showResponse(`Error durante el análisis: ${errorMessage}`);
         }
     }
 }
@@ -81,15 +84,17 @@ export function registerOllamaCommands(coreCtx: CoreExtensionContext, vsCodeCtx:
 
         try {
             const result = await serviceCall();
-            if (result && result.response && UnifiedResponseWebview.currentPanel) {
-                UnifiedResponseWebview.currentPanel.showResponse(result.response, result.prompt);
-            } else if (UnifiedResponseWebview.currentPanel) {
-                UnifiedResponseWebview.currentPanel.showResponse("Ollama no devolvió una respuesta válida.", "Error de Respuesta");
-            }
+             if (result && result.response && UnifiedResponseWebview.currentPanel) {
+        // [CORREGIDO]
+        UnifiedResponseWebview.currentPanel.showResponse(result.response);
+    } else if (UnifiedResponseWebview.currentPanel) {
+         // [CORREGIDO]
+        UnifiedResponseWebview.currentPanel.showResponse("Ollama no devolvió una respuesta válida.");
+    }
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : "Error desconocido";
             if (UnifiedResponseWebview.currentPanel) {
-                UnifiedResponseWebview.currentPanel.showResponse(`Error al ejecutar el comando: ${errorMessage}`, "Error de Ejecución");
+                UnifiedResponseWebview.currentPanel.showResponse(`Error al ejecutar el comando: ${errorMessage}`);
             } else {
                 vscode.window.showErrorMessage(`Error en el comando: ${errorMessage}`);
             }

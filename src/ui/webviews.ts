@@ -1,7 +1,8 @@
 // src/ui/webviews.ts
 import * as vscode from 'vscode';
+import MarkdownIt from 'markdown-it';
 
-interface WebviewResponse {
+interface ParsedWebviewContent {
     thinking: string;
     markdownContent: string;
     codeBlocks: { language: string; code: string }[];
@@ -16,6 +17,7 @@ export class UnifiedResponseWebview {
     private readonly _panel: vscode.WebviewPanel;
     private readonly _extensionUri: vscode.Uri;
     private _disposables: vscode.Disposable[] = [];
+    private readonly md: MarkdownIt;
 
     public static createOrShow(extensionUri: vscode.Uri, title: string) {
         const column = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.viewColumn : undefined;
@@ -42,6 +44,7 @@ export class UnifiedResponseWebview {
     private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
         this._panel = panel;
         this._extensionUri = extensionUri;
+        this.md = new MarkdownIt({ html: true, linkify: true, typographer: true }); // <-- INICIALIZAR LIBRERÍA
 
         this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
 
@@ -68,29 +71,38 @@ export class UnifiedResponseWebview {
         }, true);
     }
 
-    /**
-     * Procesa y muestra la respuesta final de Ollama.
-     * @param fullResponse La respuesta completa del servicio.
-     * @param prompt El prompt utilizado para generar la respuesta.
+     /* [MODIFICADO] Procesa y muestra la respuesta final de Ollama.
+     * @param fullResponse La respuesta completa y en bruto del servicio.
      */
-    public showResponse(fullResponse: string, prompt: string) {
-        const parsedResponse = this.parseResponse(fullResponse);
-        this._panel.webview.html = this._getHtmlForWebview({
-            thinking: prompt,
-            ...parsedResponse
-        });
+    public showResponse(fullResponse: string) {
+        const parsedContent = this.parseResponse(fullResponse);
+        this._panel.webview.html = this._getHtmlForWebview(parsedContent);
     }
-
-    private parseResponse(text: string): { markdownContent: string, codeBlocks: { language: string, code: string }[] } {
+    
+    /**
+     * [MODIFICADO] Parsea la respuesta del LLM para separar el pensamiento, el contenido y los bloques de código.
+     */
+    private parseResponse(text: string): ParsedWebviewContent {
         const codeBlocks: { language: string; code: string }[] = [];
-        // Primero, nos aseguramos de que el texto de entrada sea una cadena
-        const content = typeof text === 'string' ? text : '';
+        let thinking = "El modelo no proporcionó una cadena de pensamiento explícita.";
+        let content = typeof text === 'string' ? text : '';
+
+        // 1. Extraer el pensamiento <think>...</think>
+        const thinkMatch = content.match(/<think>([\s\S]*?)<\/think>/);
+        if (thinkMatch && thinkMatch[1]) {
+            thinking = thinkMatch[1].trim();
+            content = content.replace(thinkMatch[0], '').trim(); // Eliminar el bloque de pensamiento del contenido principal
+        }
+        
+        // 2. Extraer bloques de código del contenido restante
         const markdownContent = content.replace(/```(\w*)\s*([\s\S]*?)```/g, (match, language, code) => {
+            const index = codeBlocks.length;
             codeBlocks.push({ language: language || 'plaintext', code: code.trim() });
+            // Devolver un marcador de posición que se reemplazará más tarde
             return ``;
         });
 
-        return { markdownContent, codeBlocks };
+        return { thinking, markdownContent, codeBlocks };
     }
 
     public dispose() {
@@ -104,21 +116,19 @@ export class UnifiedResponseWebview {
         }
     }
 
-    private _getHtmlForWebview(data: WebviewResponse, isLoading = false): string {
+    private _getHtmlForWebview(data: ParsedWebviewContent, isLoading = false): string {
         const { thinking, markdownContent, codeBlocks } = data;
         const nonce = getNonce();
 
-        // Usamos Markdown-it para renderizar el contenido. VS Code lo gestiona internamente.
-        // La API de `vscode.MarkdownString` no está disponible directamente en la webview,
-        // pero podemos simular su comportamiento o usar una librería si fuera necesario.
-        // Aquí lo mantenemos simple.
-        let renderedContent = markdownContent;
+        // [MODIFICADO] Lógica de renderizado
+        let renderedContent = this.md.render(markdownContent);
 
+        // Reemplazar los marcadores de posición con los bloques de código HTML
         codeBlocks.forEach((block, index) => {
             const codeHtml = `
                 <div class="code-container">
                     <div class="code-header">
-                        <span>${block.language}</span>
+                        <span>${escape(block.language)}</span>
                         <button class="copy-btn" data-code="${escape(block.code)}">Copiar</button>
                     </div>
                     <pre><code>${escape(block.code)}</code></pre>
@@ -223,12 +233,7 @@ export class UnifiedResponseWebview {
                 </style>
             </head>
             <body>
-                ${isLoading ? `
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <div>${thinking}</div>
-                </div>
-                ` : `
+                 ${isLoading ? `...` : `
                 <details>
                     <summary>Ver Pensamiento del Modelo</summary>
                     <div class="thinking-content"><pre><code>${escape(thinking)}</code></pre></div>
