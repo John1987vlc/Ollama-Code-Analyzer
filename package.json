@@ -190,7 +190,7 @@
         },
         "ollamaCodeAnalyzer.model": {
           "type": "string",
-          "default": "codellama:7b",
+          "default": "qwen3:0.6b",
           "description": "Modelo de Ollama a usar para análisis de código"
         },
         "ollamaCodeAnalyzer.timeout": {

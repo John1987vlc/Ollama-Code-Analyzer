@@ -3,7 +3,6 @@ import * as vscode from 'vscode';
 import { CoreExtensionContext } from '../context/ExtensionContext';
 import { registerOllamaCommands } from './OllamaCommands';
 import { registerGiteaCommands } from './GiteaCommands';
-import { updateGiteaStatusBar } from '../ui/statusBar';
 
 /**
  * Registra todos los comandos de la extensión.
