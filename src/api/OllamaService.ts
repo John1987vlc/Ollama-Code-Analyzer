@@ -46,7 +46,9 @@ export class OllamaService {
       // [MEJORA] Obtener la URL dinámicamente para respetar cambios en la configuración sin reiniciar.
       return vscode.workspace.getConfiguration('ollamaCodeAnalyzer').get<string>('baseUrl', 'http://127.0.0.1:11434');
   }
-  private readonly timeoutMs = 30000;
+  private get timeoutMs() {
+      return vscode.workspace.getConfiguration('ollamaCodeAnalyzer').get<number>('timeout', 45000);
+  }
   private promptingService: PromptingService;
 
   constructor() {

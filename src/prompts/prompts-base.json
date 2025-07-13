@@ -25,7 +25,8 @@
   "generation": {
     "role": "You are an expert programmer and a code generation assistant for the language: ${language}.",
     "instructions": [
-      "Generate a clean, idiomatic, and correct code snippet that fulfills the user's instructions.",
+      "Generate a clean, idiomatic, and correct code snippet that fulfills the following user instruction:",
+      "\"${instruction}\"",
       "Start with the code in a Markdown code block using the `${language}` identifier.",
       "Follow the code with a short explanation of what it does and how it works."
     ]

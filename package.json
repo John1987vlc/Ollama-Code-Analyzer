@@ -26,7 +26,8 @@
     "onLanguage:python",
     "onLanguage:java",
     "onLanguage:cpp",
-    "onLanguage:c"
+    "onLanguage:c",
+    "onLanguage:sql"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -43,7 +44,7 @@
       },
       {
         "command": "ollamaCodeAnalyzer.generateCodeFromComment",
-        "title": "Generar código desde comentario (///)",
+        "title": "Generar código desde comentario (///, #, /*...*/)",
         "category": "Gemma3n Analysis"
       },
       {
@@ -186,8 +187,8 @@
         },
         "ollamaCodeAnalyzer.timeout": {
           "type": "number",
-          "default": 45000,
-          "description": "Timeout en milisegundos para las solicitudes (45 segundos por defecto)"
+          "default": 90000,
+          "description": "Timeout en milisegundos para las solicitudes (90 segundos por defecto)"
         },
         "ollamaCodeAnalyzer.autoAnalyze": {
           "type": "boolean",
@@ -202,13 +203,14 @@
         "ollamaCodeAnalyzer.supportedLanguages": {
           "type": "array",
           "default": [
-            "csharp",
+             "csharp",
             "javascript",
             "typescript",
             "python",
             "java",
             "cpp",
-            "c"
+            "c",
+            "sql"
           ],
           "description": "Lenguajes soportados para análisis automático",
           "items": {
@@ -217,12 +219,12 @@
         },
         "ollamaCodeAnalyzer.maxLines": {
           "type": "number",
-          "default": 200,
+          "default": 500,
           "description": "Número máximo de líneas para analizar (evita archivos muy grandes)"
         },
         "ollamaCodeAnalyzer.debounceDelay": {
           "type": "number",
-          "default": 800,
+          "default": 5000,
           "description": "Delay en milisegundos antes de analizar después de cambios (debounce)"
         },
         "ollamaCodeAnalyzer.gitea.baseUrl": {

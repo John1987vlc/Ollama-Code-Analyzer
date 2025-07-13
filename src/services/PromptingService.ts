@@ -25,15 +25,17 @@ export class PromptingService {
             const fileContent = await fs.readFile(filePath, 'utf-8');
             this.promptTemplates = JSON.parse(fileContent);
         } catch (error) {
-            vscode.window.showErrorMessage('Error crítico: No se pudieron cargar los prompts desde prompts-base.json.');
+            vscode.window.showErrorMessage('Error crítico: No se pudieron cargar los prompts desde prompts-base.json. Asegúrate de que el archivo existe y es un JSON válido.');
             console.error(error);
         }
     }
 
     private buildPrompt(templateKey: keyof typeof this.promptTemplates, replacements: Record<string, any>): string {
         const template = this.promptTemplates[templateKey];
-        if (!template) {
-            throw new Error(`No se encontró la plantilla de prompt para: ${String(templateKey)}`);
+        
+        // [CORRECCIÓN] Añadir salvaguarda contra prompts no cargados
+        if (!template || !template.instructions) {
+            throw new Error(`La plantilla de prompt para "${String(templateKey)}" no se encontró o está corrupta. Revisa prompts-base.json.`);
         }
 
         let prompt = `${template.role}\n\n`;
@@ -73,7 +75,7 @@ export class PromptingService {
     private getLanguageName(languageId: string): string {
         const languageMap: { [key: string]: string } = {
             'csharp': 'C#', 'javascript': 'JavaScript', 'typescript': 'TypeScript',
-            'python': 'Python', 'java': 'Java', 'cpp': 'C++', 'c': 'C',
+            'python': 'Python', 'java': 'Java', 'cpp': 'C++', 'c': 'C', 'sql': 'SQL',
         };
         return languageMap[languageId] || languageId;
     }
@@ -92,7 +94,8 @@ export class PromptingService {
     }
 
     public async getGenerationPrompt(instruction: string, languageId: string): Promise<string> {
-        return this.buildPrompt('generation', { language: languageId, instruction });
+        const languageName = this.getLanguageName(languageId);
+        return this.buildPrompt('generation', { language: languageName, instruction: instruction });
     }
     
     public async getExplainPrompt(code: string, languageId: string): Promise<string> {
