@@ -1,0 +1,139 @@
+/* media/styles.css */
+body {
+    font-family: var(--vscode-font-family);
+    color: var(--vscode-editor-foreground);
+    background-color: var(--vscode-editor-background);
+    padding: 1em;
+}
+
+/* --- Estilos para el Loader --- */
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 90vh;
+    text-align: center;
+    color: var(--vscode-description-foreground);
+}
+
+.spinner {
+    border: 4px solid var(--vscode-editor-foreground-transparency-2); /* Color más sutil */
+    border-top: 4px solid var(--vscode-button-background);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1em;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* --- Estilos para la Respuesta --- */
+.thinking-details {
+    background-color: var(--vscode-side-bar-background);
+    border: 1px solid var(--vscode-side-bar-border);
+    border-radius: 4px;
+    margin-bottom: 1em;
+}
+
+summary {
+    font-weight: bold;
+    padding: 0.5em;
+    cursor: pointer;
+}
+
+.thinking-content {
+    padding: 0.5em;
+    border-top: 1px solid var(--vscode-side-bar-border);
+    white-space: pre-wrap;
+    background-color: var(--vscode-input-background);
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.response-content {
+    margin-top: 1em;
+}
+
+.code-container {
+    margin: 1em 0;
+    border-radius: 4px;
+    border: 1px solid var(--vscode-editor-widget-border);
+    background-color: var(--vscode-text-block-quote-background);
+}
+
+.code-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--vscode-peek-view-title-background);
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--vscode-editor-widget-border);
+}
+
+.code-header span {
+    font-size: 0.8em;
+    text-transform: uppercase;
+}
+
+.copy-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background-color: var(--vscode-button-secondary-background);
+    color: var(--vscode-button-secondary-foreground);
+    border: none;
+    padding: 4px 8px;
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+.copy-btn:hover {
+    background-color: var(--vscode-button-secondary-hover-background);
+}
+
+pre {
+    margin: 0;
+    padding: 1em;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+code {
+    font-family: var(--vscode-editor-font-family);
+}
+
+.plantuml-container {
+                        display: flex;
+                        justify-content: center;
+                        background-color: white; /* PlantUML genera SVGs sobre fondo blanco */
+                        padding: 1em;
+                        border-radius: 4px;
+                        margin: 1em 0;
+                    }
+ .loading-container {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        height: 100vh;
+                        font-family: var(--vscode-font-family);
+                        color: var(--vscode-editor-foreground);
+                    }
+                    .spinner {
+                        border: 4px solid rgba(255, 255, 255, 0.3);
+                        border-radius: 50%;
+                        border-top: 4px solid var(--vscode-editor-foreground);
+                        width: 40px;
+                        height: 40px;
+                        animation: spin 1s linear infinite;
+                        margin-top: 20px;
+                    }
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }

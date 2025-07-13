@@ -36,16 +36,9 @@ export function registerCommands(
         }
     });
 
-    // Comando para limpiar los diagnósticos (problemas) de la vista
-    const clearDiagnosticsCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.clearDiagnostics', () => {
-        codeAnalyzer.clearDiagnostics();
-        vscode.window.showInformationMessage('Diagnósticos del analizador de código limpiados.');
-    });
-
-
     context.subscriptions.push(
         analyzeDocumentCommand,
-        selectModelCommand,
-        clearDiagnosticsCommand
+        selectModelCommand
+        
     );
 }

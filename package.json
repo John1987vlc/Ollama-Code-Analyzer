@@ -37,11 +37,6 @@
         "category": "Gemma3n Analysis"
       },
       {
-        "command": "ollamaCodeAnalyzer.clearDiagnostics",
-        "title": "Limpiar Diagnósticos",
-        "category": "Gemma3n Analysis"
-      },
-      {
         "command": "ollamaCodeAnalyzer.configureModel",
         "title": "Configurar Modelo",
         "category": "Gemma3n Analysis"
@@ -141,10 +136,6 @@
         {
           "command": "ollamaCodeAnalyzer.configureModel",
           "group": "9_utility@1"
-        },
-        {
-          "command": "ollamaCodeAnalyzer.clearDiagnostics",
-          "group": "9_utility@2"
         }
       ]
     },
@@ -324,8 +315,10 @@
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "build": "tsc && cpx \"src/prompts/**/*.json\" out/prompts",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
+    "compile": "tsc -p ./ && cpx \"src/media/*\" out/media",
+    "watch": "npm-run-all -p watch:*",
+    "watch:tsc": "tsc -watch -p ./",
+    "watch:media": "cpx \"src/media/*\" out/media --watch",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
     "test": "mocha -r ts-node/register ./out/test/*.test.js",
@@ -342,6 +335,7 @@
     "cpx": "^1.5.0",
     "eslint": "^8.57.0",
     "mocha": "^11.7.1",
+    "npm-run-all": "^4.1.5",
     "rimraf": "^5.0.0",
     "ts-node": "^10.9.2",
     "typescript": "^4.9.5"
@@ -356,7 +350,9 @@
   "homepage": "https://github.com/John1987vlc/Ollama-Code-Analyzer#readme",
   "license": "CC0-1.0",
   "dependencies": {
+    "@types/markdown-it-plantuml": "^1.4.5",
     "markdown-it": "^14.1.0",
+    "markdown-it-plantuml": "^1.4.1",
     "node-fetch": "^2.7.0"
   }
 }

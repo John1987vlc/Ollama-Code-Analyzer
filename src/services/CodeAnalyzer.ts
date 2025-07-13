@@ -151,14 +151,8 @@ export class CodeAnalyzer {
         this.outputChannel.appendLine('Caché de análisis limpiada.');
     }
 
-    /** Limpia todos los diagnósticos visibles. */
-    clearDiagnostics() {
-        this.diagnosticCollection.clear();
-    }
-
     /** Libera los recursos utilizados por la clase. */
     dispose() {
-        this.clearDiagnostics();
         this.diagnosticCollection.dispose();
         this.outputChannel.dispose();
     }
