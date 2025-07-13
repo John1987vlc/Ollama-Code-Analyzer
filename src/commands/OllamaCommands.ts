@@ -228,7 +228,7 @@ export function registerOllamaCommands(coreCtx: CoreExtensionContext, vsCodeCtx:
         });
     });
 
-    const generateUmlDiagramCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.generateUmlDiagram', async () => {
+     const generateUmlDiagramCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.generateUmlDiagram', async () => {
         const title = 'Generación de Diagrama UML';
 
         const rootFolderUri = await vscode.window.showOpenDialog({
@@ -278,8 +278,20 @@ export function registerOllamaCommands(coreCtx: CoreExtensionContext, vsCodeCtx:
                 return { prompt: "", response: "No se encontraron archivos para analizar." };
             }
 
-            const response = await coreCtx.ollamaService.generateUmlDiagram(files, vscode.workspace.getConfiguration('ollamaCodeAnalyzer').get<string>('model')!);
-            const wrappedResponse = response ? `\`\`\`plantuml\n${response}\n\`\`\`` : "No se pudo generar el diagrama.";
+            let fullUml = '@startuml\n';
+            let contextSummary = '';
+            const model = vscode.workspace.getConfiguration('ollamaCodeAnalyzer').get<string>('model')!;
+
+            for (const file of files) {
+                const result = await coreCtx.ollamaService.generateUmlDiagramForFile(file, contextSummary, model);
+                if (result && result.uml) {
+                    fullUml += result.uml + '\n';
+                    contextSummary = result.contextSummary; // Actualizamos el resumen para la siguiente iteración
+                }
+            }
+            fullUml += '@enduml';
+
+            const wrappedResponse = `\`\`\`plantuml\n${fullUml}\n\`\`\``;
             return { prompt: "UML Generation", response: wrappedResponse };
         });
     });

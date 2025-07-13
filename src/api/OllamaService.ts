@@ -189,25 +189,31 @@ export class OllamaService {
       return response?.response || null;
   }
 
-  public async generateUmlDiagram(files: { path: string, content: string }[], model: string): Promise<string | null> {
-    try {
-        const prompt = await this.promptingService.getUmlGenerationPrompt(files);
-        const response = await this.generate(prompt, model, {
-            temperature: 0.1,
-            stream: false
-        });
-        
-        if (!response?.response) return null;
-        
-        const umlMatch = response.response.match(/@startuml([\s\S]*)@enduml/);
-        return umlMatch ? `@startuml${umlMatch[1]}@enduml` : null;
+    public async generateUmlDiagramForFile(file: { path: string, content: string }, contextSummary: string, model: string): Promise<{ uml: string | null, contextSummary: string } | null> {
+        try {
+            const prompt = await this.promptingService.getUmlGenerationPrompt(file, contextSummary);
+            const response = await this.generate(prompt, model, {
+                temperature: 0.1,
+                stream: false
+            });
 
-    } catch (error) {
-        console.error('Error generando diagrama UML:', error);
-        vscode.window.showErrorMessage(`Error generando diagrama UML: ${(error as Error).message}`);
-        return null;
+            if (!response?.response) return null;
+
+            const umlMatch = response.response.match(/@startuml([\s\S]*)@enduml/);
+            const uml = umlMatch ? `@startuml${umlMatch[1]}@enduml` : null;
+            
+            // Suponiendo que el modelo también devuelve un resumen del contexto
+            const contextMatch = response.response.match(/<context>([\s\S]*)<\/context>/);
+            const newContextSummary = contextMatch ? contextMatch[1].trim() : contextSummary;
+
+            return { uml, contextSummary: newContextSummary };
+
+        } catch (error) {
+            console.error('Error generando diagrama UML para el archivo:', error);
+            vscode.window.showErrorMessage(`Error generando diagrama UML: ${(error as Error).message}`);
+            return null;
+        }
     }
-}
 
 public async generate(
       prompt: string, 
