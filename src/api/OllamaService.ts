@@ -42,7 +42,10 @@ interface ConceptualRefactoringResult {
 
 export class OllamaService {
   // [CORRECCIÓN] Se ha eliminado el formato Markdown de la URL.
-  private readonly baseUrl = 'http://127.0.0.1:11434';
+   private get baseUrl() {
+      // [MEJORA] Obtener la URL dinámicamente para respetar cambios en la configuración sin reiniciar.
+      return vscode.workspace.getConfiguration('ollamaCodeAnalyzer').get<string>('baseUrl', 'http://127.0.0.1:11434');
+  }
   private readonly timeoutMs = 30000;
   private promptingService: PromptingService;
 
@@ -204,49 +207,49 @@ export class OllamaService {
     }
 }
 
+public async generate(
+      prompt: string, 
+      model: string, 
+      options: any = {}
+  ): Promise<{ response: string; prompt: string; } | null> {
+      const { temperature = 0.5, maxTokens = 2048, stream = false } = options;
+      console.log(`[OllamaService] Enviando petición a Ollama...`);
 
-  public async generate(prompt: string, model: string, options: GenerateOptions = {}): Promise<GenerateResponse | null> {
-    const { temperature = 0.5, maxTokens = 1024, stream = false } = options;
-    console.log(`[OllamaService] Enviando petición a Ollama...`);
-    console.log(`[OllamaService] Modelo: ${model}`);
-    console.log(`[OllamaService] Prompt: ${prompt}`);
+      try {
+          const response = await fetch(`${this.baseUrl}/api/generate`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              signal: AbortSignal.timeout(this.timeoutMs),
+              body: JSON.stringify({
+                  model,
+                  prompt,
+                  options: {
+                      temperature,
+                      num_predict: maxTokens,
+                      top_p: options.top_p
+                  },
+                  stream: false,
+              }),
+          });
 
-    try {
-      const response = await fetch(`${this.baseUrl}/api/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: AbortSignal.timeout(this.timeoutMs),
-        body: JSON.stringify({
-          model,
-          prompt,
-          options: {
-            temperature,
-            num_predict: maxTokens,
-            top_p: options.top_p
-          },
-          stream: false,
-        }),
-      });
+          if (!response.ok) {
+              throw new Error(`Error en la petición: ${response.statusText}`);
+          }
 
-      if (!response.ok) {
-        throw new Error(`Error en la petición: ${response.statusText}`);
+          const data = await response.json();
+          console.log("[OllamaService] Respuesta recibida de Ollama:", data);
+          
+          return {
+              response: data.response || '',
+              prompt: prompt // Devolvemos el prompt para mostrarlo en el "thinking"
+          };
+      } catch (error) {
+          if (error instanceof Error && error.name === 'AbortError') {
+              vscode.window.showErrorMessage('Tiempo de espera agotado en la generación de texto.');
+          } else {
+              vscode.window.showErrorMessage(`Error en la generación: ${(error as Error).message}`);
+          }
+          return null;
       }
-
-      const data = await response.json();
-      console.log("[OllamaService] Respuesta recibida de Ollama:", data);
-      
-      return {
-        response: data.response || '',
-        responseTokens: data.eval_count || 0,
-        promptTokens: data.prompt_eval_count || 0,
-      };
-    } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
-        vscode.window.showErrorMessage('Tiempo de espera agotado en la generación de texto.');
-      } else {
-        vscode.window.showErrorMessage(`Error en la generación: ${(error as Error).message}`);
-      }
-      return null;
-    }
   }
 }

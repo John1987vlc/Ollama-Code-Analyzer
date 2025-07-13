@@ -2,16 +2,13 @@
 
 import * as vscode from 'vscode';
 import { CoreExtensionContext } from '../context/ExtensionContext';
-import { runAnalysis } from '../commands/OllamaCommands';
+import { runAnalysis } from '../commands/OllamaCommands'; // La importación ahora funciona
 import { debounce } from '../utils/debounce';
 import { getRelativeFilePath } from '../utils/pathUtils';
 import { updateGiteaStatusBar } from '../ui/statusBar';
 
 /**
  * Registra todos los listeners de eventos de VS Code para la extensión.
- * @param context El contexto de la extensión de VS Code.
- * @param coreCtx El contexto central de la extensión con los servicios.
- * @param giteaStatusBarItem El item de la barra de estado para actualizar.
  */
 export function registerEventListeners(
     context: vscode.ExtensionContext, 
@@ -22,8 +19,6 @@ export function registerEventListeners(
 
     /**
      * Función central para manejar un análisis, respetando la configuración del usuario.
-     * @param document El documento a analizar.
-     * @param configKey La clave de configuración para verificar si el análisis debe ejecutarse.
      */
     const handleAnalysis = (document: vscode.TextDocument, configKey: 'autoAnalyze' | 'analyzeOnOpen' | 'analyzeOnSave') => {
         const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer');
@@ -31,7 +26,8 @@ export function registerEventListeners(
 
         const supportedLanguages = config.get<string[]>('supportedLanguages', []);
         if (supportedLanguages.includes(document.languageId) && !document.isUntitled) {
-            runAnalysis(document, coreCtx);
+            // [CORREGIDO] Pasamos el vsCodeContext a la función
+            runAnalysis(document, coreCtx, context);
         }
     };
 
@@ -41,12 +37,10 @@ export function registerEventListeners(
     );
 
     // --- LISTENER: Al cambiar el editor de texto activo ---
-    // Ideal para actualizar la UI contextual, como la vista de Gitea.
     const onDidChangeActiveTextEditor = vscode.window.onDidChangeActiveTextEditor(async editor => {
         if (editor) {
             let relativePath = getRelativeFilePath(editor.document.uri);
-            if(relativePath === null)
-            {
+            if(relativePath === null) {
                 relativePath = "./";
             }
             gitContextProvider.refresh(relativePath);
@@ -55,7 +49,6 @@ export function registerEventListeners(
             // Opcionalmente, analizar el archivo cuando se enfoca.
             handleAnalysis(editor.document, 'analyzeOnOpen');
         } else {
-            // Si no hay editor activo, limpiar la vista de Gitea.
             gitContextProvider.refresh(undefined);
         }
     });
@@ -67,7 +60,6 @@ export function registerEventListeners(
 
     // --- LISTENER: Al cambiar el contenido del documento (mientras se escribe) ---
     const onDidChangeTextDocument = vscode.workspace.onDidChangeTextDocument(event => {
-        // Usamos la versión con debounce para no sobrecargar el sistema.
         debouncedLiveAnalysis(event.document);
     });
     
@@ -76,7 +68,6 @@ export function registerEventListeners(
         handleAnalysis(document, 'analyzeOnSave');
     });
 
-    // Registrar todos los listeners para que VS Code los gestione.
     context.subscriptions.push(
         onDidChangeActiveTextEditor,
         onDidOpenTextDocument,
