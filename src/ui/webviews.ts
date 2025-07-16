@@ -129,8 +129,13 @@ export class UnifiedResponseWebview {
         this._panel.webview.html = this._getHtmlForWebview({ thinking: '', markdownContent: '', codeBlocks: [] }, true);
     }
 
-    public showResponse(fullResponse: string) {
+     public showResponse(fullResponse: string, debugData?: any) {
         const parsedContent = this.parseResponse(fullResponse);
+        if (debugData) {
+            // Añadimos los datos de depuración al "pensamiento" para que se muestren.
+            const debugJson = JSON.stringify(debugData, null, 2);
+            parsedContent.thinking = `**Datos enviados al modelo para la síntesis final:**\n\n\`\`\`json\n${debugJson}\n\`\`\``;
+        }
         this._panel.webview.html = this._getHtmlForWebview(parsedContent);
     }
 
@@ -164,7 +169,7 @@ export class UnifiedResponseWebview {
         }
     }
 
-    private _getHtmlForWebview(data: ParsedWebviewContent, isLoading = false, isUmlGeneration = false): string {
+     private _getHtmlForWebview(data: ParsedWebviewContent, isLoading = false, isUmlGeneration = false): string {
         const { thinking, markdownContent } = data;
         const nonce = getNonce();
         const styleUri = this._panel.webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'styles.css'));
@@ -215,7 +220,12 @@ export class UnifiedResponseWebview {
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${this._panel.webview.cspSource}; script-src 'nonce-${nonce}'; img-src ${this._panel.webview.cspSource} https:;">
+                <meta http-equiv="Content-Security-Policy" content="
+                    default-src 'none'; 
+                    style-src ${this._panel.webview.cspSource}; 
+                    script-src 'nonce-${nonce}'; 
+                    img-src ${this._panel.webview.cspSource} https://www.plantuml.com;
+                ">
                 <title>Respuesta de Ollama</title>
                 <link href="${styleUri}" rel="stylesheet">
             </head>

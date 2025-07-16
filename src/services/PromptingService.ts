@@ -114,7 +114,18 @@ export class PromptingService {
         return this.buildPrompt('duplicate_detection', { language: languageId, code });
     }
 
-   public async getUmlGenerationPrompt(file: { path: string, content: string }, contextSummary: string): Promise<string> {
-        return this.buildPrompt('uml_generation', { file, contextSummary });
+    public async getUmlExtractPrompt(file: { path: string, content: string }, languageId: string): Promise<string> {
+        return this.buildPrompt('uml_extract', { 
+            code: file.content, 
+            filePath: file.path,
+            language: languageId
+        });
+    }
+
+    public async getUmlSynthesizePrompt(projectStructure: any[]): Promise<string> {
+        const structureString = JSON.stringify(projectStructure, null, 2);
+        return this.buildPrompt('uml_synthesize', { 
+            projectStructure: structureString 
+        });
     }
 }

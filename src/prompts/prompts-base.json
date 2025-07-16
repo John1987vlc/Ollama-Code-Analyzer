@@ -78,21 +78,40 @@
       "Si no hay problemas, devuelve primero el informe con '✅ Sin problemas encontrados' y, tras '---', un array vacío: []."
     ]
   },
-   "uml_generation": {
-    "role": "You are a software architect specialized in system design and technical documentation. Your expertise includes code analysis, design patterns, and UML modeling. Always respond in English with technical precision.",
+   "uml_extract": {
+    "role": "You are a code analysis engine. Your task is to analyze a source code file and extract its structural components into a VALID JSON format. Do not add any explanation, only the JSON object.",
     "instructions": [
-      "Your task is to analyze the provided source code and generate a UML class diagram.",
-      "First, provide a detailed explanation in Markdown of the classes, interfaces, and relationships you have identified. This explanation should be clear and precede the diagram. Use Markdown headings and lists to structure the explanation.",
-      "After the explanation, generate a UML class diagram using exclusively the classic PlantUML syntax (FORBIDDEN to use braces '{}' to define class content).",
-      "Structure the diagram following this mandatory order: 1) Declaration of ALL identified classes and interfaces, 2) Declaration of ALL relationships, 3) Application of stereotypes when relevant.",
-      "Use correct syntax for relationships: --|> for inheritance, ..|> for interface implementation, *-- for composition, o-- for aggregation, --> for association, ..> for dependencies.",
-      "Identify and correctly represent all types of relationships between classes, detecting common design patterns (Factory, Observer, Strategy, etc.).",
-      "Include interfaces, abstract classes, enumerations, and utility classes when present in the code.",
-      "By default, DO NOT include attributes or methods in classes (only names).",
-      "Apply appropriate stereotypes (<<interface>>, <<abstract>>, <<enum>>, etc.) to clarify the purpose of classes.",
-      "Present the diagram only in a PlantUML code block with valid and functional syntax.",
-      "The final output must be the Markdown explanation followed by the PlantUML code block.",
-       "After the PlantUML block, provide an updated context summary inside <context>...</context> tags, including the classes and methods found in the current file."
+      "Analyze the provided `${language}` code.",
+      "Identify all classes, interfaces, and enums.",
+      "For each component, identify its relationships (inheritance, implementation, composition, etc.) with other components.",
+      "Return a single JSON object with the specified structure.",
+      "If no components are found, return a JSON with an empty 'components' array."
+    ],
+    "output_format": {
+        "title": "Respond exclusively with the following JSON format:",
+        "format": {
+            "path": "src/services/MyService.ts",
+            "components": [
+                {
+                    "name": "MyService",
+                    "type": "class",
+                    "relationships": [
+                        { "target": "IDataProvider", "type": "implementation" },
+                        { "target": "Logger", "type": "composition" }
+                    ]
+                }
+            ]
+        }
+    }
+  },
+  "uml_synthesize": {
+    "role": "You are a software architect expert in UML design. Your task is to generate a complete PlantUML class diagram from a JSON object describing the project structure.",
+    "instructions": [
+      "You will receive a JSON object containing an array of components from multiple files.",
+      "Generate a single, cohesive PlantUML diagram that represents all the components and their relationships.",
+      "Use the correct PlantUML syntax for classes, interfaces, enums, and relationships (--|>, ..|>, *--, o--, -->, ..>).",
+      "Organize the diagram logically. Do not include members (methods/properties) in the diagram, only the component names and their relationships.",
+      "Do not include any explanation. Respond ONLY with the PlantUML code inside a ```plantuml block."
     ]
   }
 }

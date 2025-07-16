@@ -189,31 +189,51 @@ export class OllamaService {
       return response?.response || null;
   }
 
-    public async generateUmlDiagramForFile(file: { path: string, content: string }, contextSummary: string, model: string): Promise<{ uml: string | null, contextSummary: string } | null> {
-        try {
-            const prompt = await this.promptingService.getUmlGenerationPrompt(file, contextSummary);
-            const response = await this.generate(prompt, model, {
-                temperature: 0.1,
-                stream: false
-            });
+    public async extractUmlStructureFromFile(file: { path: string, content: string }, model: string): Promise<any | null> {
+    const languageId = vscode.languages.getLanguages().then(langs => {
+        // Lógica simple para determinar el lenguaje, se puede mejorar.
+        const ext = path.extname(file.path).substring(1);
+        return langs.find(l => l.endsWith(ext)) || 'unknown';
+    });
 
-            if (!response?.response) return null;
+    try {
+        const prompt = await this.promptingService.getUmlExtractPrompt(file, await languageId);
+        const response = await this.generate(prompt, model, { temperature: 0.0 });
 
-            const umlMatch = response.response.match(/@startuml([\s\S]*)@enduml/);
-            const uml = umlMatch ? `@startuml${umlMatch[1]}@enduml` : null;
-            
-            // Suponiendo que el modelo también devuelve un resumen del contexto
-            const contextMatch = response.response.match(/<context>([\s\S]*)<\/context>/);
-            const newContextSummary = contextMatch ? contextMatch[1].trim() : contextSummary;
+        if (!response?.response) return null;
 
-            return { uml, contextSummary: newContextSummary };
-
-        } catch (error) {
-            console.error('Error generando diagrama UML para el archivo:', error);
-            vscode.window.showErrorMessage(`Error generando diagrama UML: ${(error as Error).message}`);
-            return null;
+        const jsonMatch = response.response.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            return JSON.parse(jsonMatch[0]);
         }
+        return null;
+    } catch (error) {
+        console.error(`Error extrayendo estructura de ${file.path}:`, error);
+        // Devolvemos null para que el proceso continúe con otros archivos.
+        return null; 
     }
+}
+
+/**
+ * Fase 2: Genera el diagrama PlantUML final a partir de la estructura completa del proyecto.
+ */
+public async synthesizeUmlDiagram(projectStructure: any[], model: string): Promise<string | null> {
+    try {
+        const prompt = await this.promptingService.getUmlSynthesizePrompt(projectStructure);
+        const response = await this.generate(prompt, model, { temperature: 0.1 });
+
+        if (!response?.response) return null;
+
+        // Extraer solo el bloque de PlantUML
+        const umlMatch = response.response.match(/```plantuml\s*([\s\S]*?)```/);
+        return umlMatch ? umlMatch[1] : null;
+
+    } catch (error) {
+        console.error('Error sintetizando el diagrama UML:', error);
+        vscode.window.showErrorMessage(`Error generando el diagrama final: ${(error as Error).message}`);
+        return null;
+    }
+}
 
 public async generate(
       prompt: string, 
