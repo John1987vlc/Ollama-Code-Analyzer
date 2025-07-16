@@ -3,7 +3,7 @@
 import * as vscode from 'vscode';
 import { CoreExtensionContext } from '../context/ExtensionContext';
 import { UnifiedResponseWebview } from '../ui/webviews';
-import { getRelativeFilePath } from '../utils/pathUtils';
+
 
 // Función para mapear IDs de lenguaje a extensiones de archivo
 function getExtensionsForLanguage(languageId: string): string[] {
@@ -228,7 +228,7 @@ export function registerOllamaCommands(coreCtx: CoreExtensionContext, vsCodeCtx:
         });
     });
 
-     const generateUmlDiagramCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.generateUmlDiagram', async () => {
+    const generateUmlDiagramCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.generateUmlDiagram', async () => {
         const title = 'Generación de Diagrama UML';
 
         const rootFolderUri = await vscode.window.showOpenDialog({
@@ -238,63 +238,88 @@ export function registerOllamaCommands(coreCtx: CoreExtensionContext, vsCodeCtx:
             openLabel: 'Seleccionar Carpeta para Analizar'
         });
 
-        if (!rootFolderUri || rootFolderUri.length === 0) {
-            return;
-        }
+        if (!rootFolderUri || rootFolderUri.length === 0) return;
+        
         const analysisRoot = rootFolderUri[0];
 
         const findProjectFiles = async (rootUri: vscode.Uri): Promise<{ path: string, content: string }[]> => {
             const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer');
             const supportedLanguages = config.get<string[]>('supportedLanguages', []);
-            
             const allExtensions = supportedLanguages.flatMap(getExtensionsForLanguage);
             const uniqueExtensions = [...new Set(allExtensions)];
 
-            if (uniqueExtensions.length === 0) {
-                return [];
-            }
+            if (uniqueExtensions.length === 0) return [];
 
             const searchPattern = new vscode.RelativePattern(rootUri, `**/*{${uniqueExtensions.join(',')}}`);
-            
             const files = await vscode.workspace.findFiles(searchPattern, '**/node_modules/**');
 
-            const fileContents = await Promise.all(
+            return Promise.all(
                 files.map(async (uri) => {
                     const document = await vscode.workspace.openTextDocument(uri);
-                    const relativePath = vscode.workspace.asRelativePath(uri, false);
                     return {
-                        path: relativePath,
+                        path: vscode.workspace.asRelativePath(uri, false),
                         content: document.getText()
                     };
                 })
             );
-            return fileContents;
         };
 
-        await executeCommandWithWebview(title, async () => {
-            const files = await findProjectFiles(analysisRoot);
-            if (files.length === 0) {
-                vscode.window.showInformationMessage("No se encontraron archivos de código soportados en la carpeta seleccionada. Revisa la configuración 'supportedLanguages'.");
-                return { prompt: "", response: "No se encontraron archivos para analizar." };
-            }
+        // Inicia la webview
+        UnifiedResponseWebview.createOrShow(vsCodeCtx.extensionUri, title);
+        
+        const files = await findProjectFiles(analysisRoot);
+        if (files.length === 0) {
+            vscode.window.showInformationMessage("No se encontraron archivos de código soportados. Revisa la configuración 'supportedLanguages'.");
+            UnifiedResponseWebview.currentPanel?.showResponse("No se encontraron archivos para analizar.");
+            return;
+        }
 
-            let fullUml = '@startuml\n';
-            let contextSummary = '';
-            const model = vscode.workspace.getConfiguration('ollamaCodeAnalyzer').get<string>('model')!;
+        // Muestra el loader inicial
+        UnifiedResponseWebview.currentPanel?.showUmlInitialLoading(files.length);
 
+        let fullUml = '@startuml\n';
+        let contextSummary = 'Project overview:';
+        const model = vscode.workspace.getConfiguration('ollamaCodeAnalyzer').get<string>('model')!;
+
+        try {
             for (const file of files) {
                 const result = await coreCtx.ollamaService.generateUmlDiagramForFile(file, contextSummary, model);
+                
+                // Extrae los componentes para la UI de progreso.
+                const componentsFound = result?.contextSummary.replace(contextSummary, '').trim() || 'Analizando...';
+                
+                // Actualiza la UI de progreso
+                if (UnifiedResponseWebview.currentPanel) {
+                    UnifiedResponseWebview.currentPanel.showUmlGenerationProgress(file.path, componentsFound);
+                }
+
                 if (result && result.uml) {
-                    fullUml += result.uml + '\n';
-                    contextSummary = result.contextSummary; // Actualizamos el resumen para la siguiente iteración
+                    // Extrae solo el contenido del diagrama, sin los @startuml/@enduml
+                    const umlContent = result.uml.replace(/@startuml|@enduml/g, '').trim();
+                    if(umlContent){
+                       fullUml += `\n' Diagram from ${file.path}\n${umlContent}\n`;
+                    }
+                    contextSummary = result.contextSummary; // Actualiza el resumen para la siguiente iteración
                 }
             }
-            fullUml += '@enduml';
+            fullUml += '\n@enduml';
 
-            const wrappedResponse = `\`\`\`plantuml\n${fullUml}\n\`\`\``;
-            return { prompt: "UML Generation", response: wrappedResponse };
-        });
+            // Muestra el diagrama final
+            if (UnifiedResponseWebview.currentPanel) {
+                const finalResponse = `A continuación se muestra el diagrama UML generado a partir de los archivos del proyecto.\n\n\`\`\`plantuml\n${fullUml}\n\`\`\``;
+                UnifiedResponseWebview.currentPanel.showResponse(finalResponse);
+            }
+
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "Error desconocido";
+            if (UnifiedResponseWebview.currentPanel) {
+                UnifiedResponseWebview.currentPanel.showResponse(`Error durante la generación del UML: ${errorMessage}`);
+            } else {
+                vscode.window.showErrorMessage(`Error en la generación de UML: ${errorMessage}`);
+            }
+        }
     });
+
 
 
     vsCodeCtx.subscriptions.push(

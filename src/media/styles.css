@@ -137,3 +137,46 @@ code {
                         0% { transform: rotate(0deg); }
                         100% { transform: rotate(360deg); }
                     }
+                    .progress-list {
+    list-style-type: none;
+    padding: 0;
+    margin-top: 20px;
+    max-width: 80%;
+    width: 600px;
+    text-align: left;
+    max-height: 40vh;
+    overflow-y: auto;
+    border: 1px solid var(--vscode-editor-widget-border);
+    border-radius: 4px;
+}
+
+.processed-file {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--vscode-editor-widget-border);
+}
+
+.processed-file:last-child {
+    border-bottom: none;
+}
+
+.processed-file .icon {
+    margin-right: 10px;
+    color: var(--vscode-testing-iconPassed); /* Verde */
+}
+
+.processed-file .path {
+    font-weight: bold;
+    color: var(--vscode-foreground);
+    flex-shrink: 0;
+}
+
+.processed-file .components {
+    margin-left: 15px;
+    color: var(--vscode-description-foreground);
+    font-style: italic;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

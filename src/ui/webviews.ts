@@ -1,13 +1,18 @@
 // src/ui/webviews.ts
 import * as vscode from 'vscode';
 import MarkdownIt from 'markdown-it';
-import plantuml from 'markdown-it-plantuml'; // <--- 1. Importa la nueva librería
-
+import plantuml from 'markdown-it-plantuml';
 
 interface ParsedWebviewContent {
     thinking: string;
     markdownContent: string;
     codeBlocks: { language: string; code: string }[];
+}
+
+// Interfaz para el estado de progreso de UML
+interface UmlProgressState {
+    processedFiles: { path: string; components: string }[];
+    remainingFiles: number;
 }
 
 /**
@@ -21,8 +26,9 @@ export class UnifiedResponseWebview {
     private _disposables: vscode.Disposable[] = [];
     private readonly md: MarkdownIt;
     private _loadingMessage = 'Contactando con Ollama...';
+    private _umlProgressState: UmlProgressState = { processedFiles: [], remainingFiles: 0 };
 
-    // 2. Modifica el método `reveal` para que acepte el nuevo mensaje
+
     public static reveal(extensionUri: vscode.Uri, title: string, loadingMessage: string) {
         const column = vscode.window.activeTextEditor
             ? vscode.window.activeTextEditor.viewColumn
@@ -37,13 +43,12 @@ export class UnifiedResponseWebview {
                 vscode.ViewColumn.Beside,
                 {
                     enableScripts: true,
-                    localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'out')]
+                    localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'out'), vscode.Uri.joinPath(extensionUri, 'media')]
                 }
             );
             UnifiedResponseWebview.currentPanel = new UnifiedResponseWebview(panel, extensionUri);
         }
-        
-        // 3. Establece el mensaje y muestra el estado de carga inicial
+
         UnifiedResponseWebview.currentPanel._loadingMessage = loadingMessage;
         UnifiedResponseWebview.currentPanel._panel.title = title;
         UnifiedResponseWebview.currentPanel.showLoading();
@@ -71,13 +76,11 @@ export class UnifiedResponseWebview {
         UnifiedResponseWebview.currentPanel = new UnifiedResponseWebview(panel, extensionUri);
     }
 
-     private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
+    private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
         this._panel = panel;
         this._extensionUri = extensionUri;
-        
-        // 2. Configura MarkdownIt para que use el plugin de PlantUML
-        this.md = new MarkdownIt({ html: true, linkify: true, typographer: true });
-        this.md.use(plantuml); // <--- ¡Añade el plugin aquí!
+
+        this.md = new MarkdownIt({ html: true, linkify: true, typographer: true }).use(plantuml);
 
         this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
 
@@ -91,47 +94,60 @@ export class UnifiedResponseWebview {
             null,
             this._disposables
         );
-
-        this.showLoading();
     }
-
-    /** Muestra un indicador de carga en la webview. */
-    public showLoading() {
+    
+    /**
+     * [NUEVO] Muestra el estado de carga inicial para la generación de UML.
+     */
+    public showUmlInitialLoading(totalFiles: number) {
+        this._umlProgressState = { processedFiles: [], remainingFiles: totalFiles };
+        this._loadingMessage = 'Analizando archivos para generar diagrama UML...';
         this._panel.webview.html = this._getHtmlForWebview(
             { thinking: '', markdownContent: '', codeBlocks: [] },
-            true // isLoading = true
+            true,
+            true // isUmlGeneration
         );
     }
 
-     /* [MODIFICADO] Procesa y muestra la respuesta final de Ollama.
-     * @param fullResponse La respuesta completa y en bruto del servicio.
+    /**
+     * [NUEVO] Actualiza la vista web con el progreso del análisis de archivos UML.
+     * @param filePath La ruta del archivo que acaba de ser procesado.
+     * @param components Un resumen de los componentes encontrados (clases/métodos).
      */
+    public showUmlGenerationProgress(filePath: string, components: string) {
+        this._umlProgressState.processedFiles.push({ path: filePath, components });
+        this._umlProgressState.remainingFiles--;
+        
+        this._panel.webview.html = this._getHtmlForWebview(
+            { thinking: '', markdownContent: '', codeBlocks: [] },
+            true, // Sigue en estado de carga
+            true  // Es generación UML
+        );
+    }
+
+    public showLoading() {
+        this._panel.webview.html = this._getHtmlForWebview({ thinking: '', markdownContent: '', codeBlocks: [] }, true);
+    }
+
     public showResponse(fullResponse: string) {
         const parsedContent = this.parseResponse(fullResponse);
         this._panel.webview.html = this._getHtmlForWebview(parsedContent);
     }
-    
-    /**
-     * [MODIFICADO] Parsea la respuesta del LLM para separar el pensamiento, el contenido y los bloques de código.
-     */
-      private parseResponse(text: string): ParsedWebviewContent {
+
+    private parseResponse(text: string): ParsedWebviewContent {
         const codeBlocks: { language: string; code: string }[] = [];
         let thinking = "El modelo no proporcionó una cadena de pensamiento explícita.";
         let content = typeof text === 'string' ? text : '';
 
-        // Extraer el pensamiento <think>...</think>
         const thinkMatch = content.match(/<think>([\s\S]*?)<\/think>/);
         if (thinkMatch && thinkMatch[1]) {
             thinking = thinkMatch[1].trim();
             content = content.replace(thinkMatch[0], '').trim();
         }
         
-        // 5. MODIFICACIÓN: La librería markdown-it-plantuml necesita los bloques intactos.
-        // Así que simplemente pasamos todo el contenido para que el renderizador lo procese.
-        // La extracción manual de bloques de código se puede mantener para copiar/pegar.
         content.replace(/```(\w*)\s*([\s\S]*?)```/g, (match, language, code) => {
             codeBlocks.push({ language: language || 'plaintext', code: code.trim() });
-            return ''; // No modificamos el contenido principal
+            return '';
         });
 
         return { thinking, markdownContent: content, codeBlocks };
@@ -148,76 +164,67 @@ export class UnifiedResponseWebview {
         }
     }
 
-   // En: src/ui/webviews.ts
-
-private _getHtmlForWebview(data: ParsedWebviewContent, isLoading = false): string {
-        const { thinking, markdownContent, codeBlocks } = data;
+    private _getHtmlForWebview(data: ParsedWebviewContent, isLoading = false, isUmlGeneration = false): string {
+        const { thinking, markdownContent } = data;
         const nonce = getNonce();
-        const styleUri = this._panel.webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'out', 'webview.css'));
-        const scriptUri = this._panel.webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'out', 'webview.js'));
+        const styleUri = this._panel.webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'styles.css'));
+        const scriptUri = this._panel.webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'main.js'));
 
-    let bodyContent: string;
+        let bodyContent: string;
 
-    if (isLoading) {
-        // --- CORRECCIÓN ---
-        // HTML específico para el estado de carga
-        bodyContent = `
-           <div class="loading-container">
+        if (isLoading) {
+            if (isUmlGeneration) {
+                // HTML para la carga de UML
+                const processedFilesHtml = this._umlProgressState.processedFiles.map(file => `
+                    <li class="processed-file">
+                        <span class="icon">✔️</span>
+                        <span class="path">${escape(file.path)}</span>
+                        <span class="components">${escape(file.components)}</span>
+                    </li>
+                `).join('');
+
+                bodyContent = `
+                    <div class="loading-container">
+                        <h2>${this._loadingMessage}</h2>
+                        <p>Analizados ${this._umlProgressState.processedFiles.length} de ${this._umlProgressState.processedFiles.length + this._umlProgressState.remainingFiles} archivos.</p>
+                        <div class="spinner"></div>
+                        <ul class="progress-list">${processedFilesHtml}</ul>
+                    </div>`;
+            } else {
+                // HTML para la carga genérica
+                bodyContent = `
+                   <div class="loading-container">
                         <h2>${this._loadingMessage}</h2>
                         <p>(Espera...)</p>
                         <div class="spinner"></div>
-                    </div>
-        `;
-    } else {
-        // HTML para mostrar la respuesta final
-        let renderedContent = this.md.render(markdownContent);
-
-        // Se reemplazan los marcadores de posición con los bloques de código HTML
-         codeBlocks.forEach((block) => {
-             // Evitamos renderizar bloques plantuml dos veces
-            if (block.language !== 'plantuml') {
-                const codeHtml = `
-                    <div class="code-container">
-                        <div class="code-header">
-                            <span>${escape(block.language)}</span>
-                            <button class="copy-btn" data-code="${escape(block.code)}">Copiar</button>
-                        </div>
-                        <pre><code>${escape(block.code)}</code></pre>
                     </div>`;
-                // Se reemplaza un marcador si lo hubieras, o simplemente se añade al final.
-                // Para este ejemplo, asumimos que se añade al contenido.
-                renderedContent += codeHtml;
             }
-        });
+        } else {
+            // HTML para mostrar la respuesta final
+            bodyContent = `
+                <details class="thinking-details">
+                    <summary>Ver Pensamiento del Modelo</summary>
+                    <div class="thinking-content"><pre><code>${escape(thinking)}</code></pre></div>
+                </details>
+                <div class="response-content">${this.md.render(markdownContent)}</div>
+            `;
+        }
 
-        bodyContent = `
-            <details class="thinking-details">
-                <summary>Ver Pensamiento del Modelo</summary>
-                <div class="thinking-content">
-                    <pre><code>${escape(thinking)}</code></pre>
-                </div>
-            </details>
-            <div class="response-content">
-                        ${this.md.render(markdownContent)}
-                    </div>
-        `;
+        return `<!DOCTYPE html>
+            <html lang="es">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${this._panel.webview.cspSource}; script-src 'nonce-${nonce}'; img-src ${this._panel.webview.cspSource} https:;">
+                <title>Respuesta de Ollama</title>
+                <link href="${styleUri}" rel="stylesheet">
+            </head>
+            <body>
+                ${bodyContent}
+                <script nonce="${nonce}" src="${scriptUri}"></script>
+            </body>
+            </html>`;
     }
-
-    return `<!DOCTYPE html>
-        <html lang="es">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${this._panel.webview.cspSource}; script-src 'nonce-${nonce}';">
-            <title>Respuesta de Ollama</title>
-            <link href="${styleUri}" rel="stylesheet">
-        </head>
-        <body>
-            ${bodyContent}
-            <script nonce="${nonce}" src="${scriptUri}"></script>
-        </body>
-        </html>`;
-}
 }
 
 function getNonce(): string {
@@ -230,13 +237,6 @@ function getNonce(): string {
 }
 
 function escape(htmlStr: string): string {
-    // [CORREGIDO] Añadimos una guarda para evitar errores si el input no es una cadena.
-    if (typeof htmlStr !== 'string') {
-        return '';
-    }
-    return htmlStr.replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;")
-          .replace(/'/g, "&#39;");
+    if (typeof htmlStr !== 'string') return '';
+    return htmlStr.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
