@@ -1,5 +1,9 @@
+/**
+ * @file Registra los listeners para eventos del editor de VS Code.
+ * Se encarga de disparar análisis automáticos cuando se abre, guarda o modifica
+ * un archivo, basándose en la configuración del usuario.
+ */
 // src/events/listeners.ts
-
 import * as vscode from 'vscode';
 import { CoreExtensionContext } from '../context/ExtensionContext';
 import { runAnalysis } from '../commands/OllamaCommands'; // La importación ahora funciona

@@ -1,3 +1,9 @@
+/**
+ * @file Gestiona la creación y el contenido de las Webviews.
+ * Define la clase `UnifiedResponseWebview` que se utiliza para mostrar
+ * respuestas de Ollama, estados de carga y diagramas UML,
+ * manejando también la comunicación entre la webview y la extensión.
+ */
 // src/ui/webviews.ts
 import * as vscode from 'vscode';
 import MarkdownIt from 'markdown-it';

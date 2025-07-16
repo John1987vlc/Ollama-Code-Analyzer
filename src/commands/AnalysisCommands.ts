@@ -1,4 +1,8 @@
-
+/**
+ * @file Registra los comandos relacionados con el análisis de código.
+ * Incluye comandos para analizar el documento actual, encontrar sugerencias de
+ * refactorización, explicar código y validar estándares.
+ */
 // src/commands/AnalysisCommands.ts - Comandos de análisis
 import * as vscode from 'vscode';
 import { CoreExtensionContext } from '../context/ExtensionContext';

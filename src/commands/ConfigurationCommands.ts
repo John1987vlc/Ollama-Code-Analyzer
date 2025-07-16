@@ -1,3 +1,8 @@
+/**
+ * @file Registra los comandos relacionados con la configuración de la extensión.
+ * Permite al usuario configurar el modelo de Ollama y el idioma de salida
+ * a través de la paleta de comandos.
+ */
 // src/commands/ConfigurationCommands.ts
 import * as vscode from 'vscode';
 import { CoreExtensionContext } from '../context/ExtensionContext';

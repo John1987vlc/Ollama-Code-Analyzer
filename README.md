@@ -1,121 +1,110 @@
-
 # Ollama Code Analyzer
 
-A Visual Studio Code extension that supercharges your development workflow by integrating code analysis powered by local AI models through Ollama, combined with deep contextual insights via Gitea integration.
+Una extensión para Visual Studio Code que potencia tu flujo de desarrollo integrando análisis de código avanzado mediante modelos de IA locales a través de Ollama.
+
+## ✨ Características Principales
+
+Esta extensión trae el poder de los Grandes Modelos de Lenguaje (LLM) directamente a tu editor, ejecutándose de forma local para garantizar la privacidad y la velocidad.
+
+### Análisis de Código Inteligente
+Detecta bugs, inconsistencias, malas prácticas y problemas de mantenibilidad en tu código.
+
+### Generación de Código Asistida
+Crea fragmentos de código a partir de instrucciones simples escritas como comentarios (`///`, `#`, `/*...*/`, etc.).
+
+### Refactorización Conceptual Inteligente
+No se limita a sugerencias simples. Infiere la intención original de tu código y propone refactorizaciones a nivel profesional, explicando el porqué de la mejora.
+
+### Explicación de Código
+¿No entiendes un bloque de código complejo? Selecciónalo y solicita una explicación clara y concisa sobre su funcionamiento.
+
+### Generación de Pruebas Unitarias
+Acelera tu ciclo de TDD generando pruebas unitarias para el código seleccionado, utilizando frameworks populares del lenguaje correspondiente.
+
+### Generación de Diagramas UML
+Analiza la estructura de todo tu proyecto (clases, interfaces, relaciones) y genera automáticamente un diagrama de clases en formato PlantUML.
+
+### Validación de Estándares
+Comprueba si un fichero o todo el proyecto cumple con las mejores prácticas y los estándares de codificación del lenguaje.
+
+### Totalmente Local y Privado
+Todo el análisis se ejecuta en tu máquina a través de tu instancia local de Ollama. Tu código nunca abandona tu entorno.
 
 ---
 
-## ✨ Key Features
+## 🚀 Requisitos
 
-This extension brings the power of Large Language Models (LLMs) directly into your editor, running locally to ensure privacy and speed.
+Antes de instalar, asegúrate de tener:
 
-- **Intelligent Code Analysis**  
-  Detect bugs, inconsistencies, bad practices, and maintenance issues in your code.
-
-- **Assisted Code Generation**  
-  Create code snippets from simple instructions written as comments.
-
-- **Conceptual Refactoring**  
-  Not just suggestions—this infers your code’s original intent and proposes professional-level refactoring.
-
-- **Code Explanation**  
-  Don’t understand a complex block of code? Select it and request a clear, concise explanation.
-
-- **Unit Test Generation**  
-  Speed up your TDD cycle by generating unit tests for the selected code.
-
-- **Gitea Integration**  
-  Enhance AI analysis with your repository context like issues, pull requests, and recent commits related to the file you're editing.
-
-- **Fully Local and Private**  
-  All analysis runs on your machine through your local Ollama instance. Your code never leaves your environment.
+- Visual Studio Code (versión 1.74.0 o superior).
+- Ollama instalado y en ejecución en tu sistema. Descárgalo desde [ollama.com](https://ollama.com).
+- Un modelo de lenguaje orientado a código descargado en Ollama (ej: `codellama`, `gemma:2b`, `mistral`).
 
 ---
 
-## 🚀 Requirements
+## 📦 Instalación
 
-Before installing, ensure you have:
+1. Clona el repositorio o descarga los archivos.
+2. Abre una terminal en la raíz del proyecto y empaqueta la extensión:
 
-- Visual Studio Code (version 1.74.0 or higher)
-- Ollama installed and running on your system. Download it from [ollama.com](https://ollama.com).
+```bash
+npm install
+vsce package
+```
 
----
+3. Instala el archivo `.vsix` generado usando la línea de comandos de VS Code:
 
-## 📦 Installation
+```bash
+code --install-extension ollama-code-analyzer-*.vsix
+```
 
-1. Clone the repository or download the files.
-2. Open a terminal in the project root and package the extension:
-
-   ```bash
-   vsce package
-   ```
-
-3. Install the generated `.vsix` file using the VS Code command line:
-
-   ```bash
-   code --install-extension ollama-code-analyzer-1.0.0.vsix
-   ```
-
-4. Restart VS Code and you're ready to go!
+4. Reinicia VS Code y la extensión estará lista para usarse.
 
 ---
 
-## ⚙️ Configuration
+## ⚙️ Configuración
 
-Customize the extension through VS Code settings (`File > Preferences > Settings`), search for `ollamaCodeAnalyzer`.
+Puedes personalizar la extensión a través de los ajustes de VS Code (`Archivo > Preferencias > Ajustes`), buscando **Ollama Code Analyzer**.
 
-### Ollama Settings
+- `ollamaCodeAnalyzer.baseUrl`: URL de tu servicio de Ollama (por defecto: `http://localhost:11434`).
+- `ollamaCodeAnalyzer.outputLanguage`: Idioma para las respuestas de la IA (comentarios, explicaciones, etc.). Opciones: `Español`, `English`.
 
-- `ollamaCodeAnalyzer.baseUrl` — URL of your Ollama service (default: `http://localhost:11434`).
-- `ollamaCodeAnalyzer.model` — The model to use for analysis (e.g., `codellama:7b`, `gemma:2b`).
-- `ollamaCodeAnalyzer.autoAnalyze` — Enable or disable automatic analysis while typing (default: `false`).
-- `ollamaCodeAnalyzer.supportedLanguages` — Array of languages for which analysis will be activated.
-
-### Gitea Settings (Optional)
-
-Enable contextual analysis by configuring:
-
-- `ollamaCodeAnalyzer.gitea.baseUrl` — Base URL of your Gitea instance.
-- `ollamaCodeAnalyzer.gitea.token` — Your Gitea personal access token.
-- `ollamaCodeAnalyzer.gitea.organization` — Your organization or username in Gitea.
-- `ollamaCodeAnalyzer.gitea.repository` — Repository name.
+También puedes configurar el modelo a usar directamente desde la paleta de comandos.
 
 ---
 
-## 💻 Usage & Commands
+## 💻 Uso y Comandos
 
-You can access features in several ways:
+### Menú Contextual (Clic Derecho en el Editor)
 
-### Command Palette (`Ctrl+Shift+P`)
+Aparecerá un submenú llamado **"Gemma3n Analysis"** con los comandos agrupados por contexto:
 
-- **Ollama: Analyze Current Document** — Manually trigger analysis on the active file.
-- **Ollama: Clear Diagnostics** — Clear all suggestions from the Problems view.
-- **Ollama: Configure Model** — Quickly select the AI model to use.
-- **Gitea: Configure Gitea** — Launch a wizard to set up Gitea integration.
-- **Gitea: Refresh Context View** — Refresh the sidebar with updated Gitea info.
+#### 1. Comandos de Selección (cuando tienes código seleccionado)
+- **Proponer refactorización inteligente**: Ofrece una reescritura del código seleccionado para mejorarlo.
+- **Explicar código seleccionado**: Abre una vista con una explicación detallada de lo que hace el código.
+- **Generar prueba unitaria**: Crea un test para la lógica del código seleccionado.
 
-### Editor Context Menu (Right-Click)
+#### 2. Comandos de Archivo
+- **Analizar Documento Actual**: Realiza un análisis completo del archivo activo.
+- **Validar estándares de empresa**: Comprueba si el código sigue buenas prácticas.
+- **Detectar lógica duplicada**: Busca bloques repetidos o muy similares.
+- **Buscar sugerencias de refactorización**: Lista posibles mejoras.
+- **Generar código desde comentario**: Convierte un comentario instructivo en código funcional.
 
-When selecting code, access:
+#### 3. Comandos de Proyecto
+- **Generar Diagrama UML del proyecto**: Analiza todos los archivos del workspace y genera un diagrama de clases.
+- **Validar estándares del proyecto**: Ejecuta el validador de estándares en todos los archivos y genera un informe consolidado.
 
-- **Ollama: Propose Intelligent Refactoring** — Get an advanced refactoring suggestion.
-- **Ollama: Explain Selected Code** — Receive a detailed explanation of the code’s functionality.
-- **Ollama: Generate Unit Test** — Create a test file for the selected code.
+### Paleta de Comandos (`Ctrl+Shift+P`)
 
-### Keyboard Shortcuts
+Todos los comandos anteriores están disponibles en la paleta de comandos. Ejemplo: `"Analizar Documento Actual"`.
 
-- **Generate Code from Comment (`Ctrl+Shift+J`)**  
-  Write an instruction in a line starting with `///`, press the shortcut, and the extension generates code below.
-
-  ```javascript
-  /// Make me a function that sums two numbers and multiplies the result by 10
-  ```
-
-- **Intelligent Refactoring (`Ctrl+Shift+H`)**  
-  Select code and press the shortcut to receive a refactoring proposal.
+Comandos de configuración adicionales:
+- **Configurar Modelo**: Elegir el modelo de Ollama para análisis y generación.
+- **Configurar Idioma de Salida**: Cambia entre `Español` e `English` para las respuestas de la IA.
 
 ---
 
-## 📜 License
+## 📜 Licencia
 
-This project is licensed under the **CC0 1.0 Universal** license. You are free to use, modify, and distribute the code as you wish.
+Este proyecto está bajo la licencia **CC0 1.0 Universal**. Eres libre de usar, modificar y distribuir el código como desees.

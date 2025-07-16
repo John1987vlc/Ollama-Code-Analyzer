@@ -1,3 +1,9 @@
+/**
+ * @file Servicio de gestión de prompts para la IA.
+ * Carga plantillas de prompts desde un archivo JSON y las construye
+ * dinámicamente, insertando el código, el idioma y otras variables
+ * necesarias para cada tipo de solicitud a Ollama.
+ */
 // src/services/PromptingService.ts
 import * as vscode from 'vscode';
 import * as fs from 'fs/promises';

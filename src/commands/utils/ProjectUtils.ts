@@ -1,3 +1,8 @@
+/**
+ * @file Utilidades para los comandos que operan a nivel de proyecto.
+ * Contiene funciones para buscar archivos en el workspace, obtener las extensiones
+ * de un lenguaje y manejar patrones de exclusión.
+ */
 import * as vscode from 'vscode';
 import { getExcludePattern } from '../../utils/ignoreUtils';
 

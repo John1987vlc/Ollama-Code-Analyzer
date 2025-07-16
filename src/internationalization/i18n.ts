@@ -1,3 +1,8 @@
+/**
+ * @file Gestiona la internacionalización (i18n) de la extensión.
+ * Carga los ficheros de traducción (locales) y proporciona una función `t`
+ * para obtener los textos en el idioma configurado por el usuario.
+ */
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';

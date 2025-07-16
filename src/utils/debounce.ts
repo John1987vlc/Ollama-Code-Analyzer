@@ -1,3 +1,9 @@
+/**
+ * @file Contiene una función de utilidad `debounce`.
+ * Se utiliza para retrasar la ejecución de una función hasta que haya
+ * transcurrido un tiempo determinado sin que se vuelva a llamar,
+ * optimizando eventos frecuentes como el tecleo del usuario.
+ */
 // src/utils/debounce.ts
 
 /**

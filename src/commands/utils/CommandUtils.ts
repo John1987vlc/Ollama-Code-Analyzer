@@ -1,3 +1,9 @@
+/**
+ * @file Utilidades compartidas para la ejecución de comandos.
+ * Proporciona funciones auxiliares, como `executeCommandWithWebview`, para
+ * estandarizar la forma en que los comandos interactúan con la UI (Webviews)
+ * y manejan los estados de carga y los errores.
+ */
 import * as vscode from 'vscode';
 import { UnifiedResponseWebview } from '../../ui/webviews';
 import { I18n } from '../../internationalization/i18n';

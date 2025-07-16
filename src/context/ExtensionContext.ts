@@ -1,3 +1,9 @@
+/**
+ * @file Define el contexto central de la extensión.
+ * `CoreExtensionContext` actúa como un contenedor de inyección de dependencias,
+ * inicializando y proporcionando acceso a todos los servicios principales
+ * como OllamaService, PromptingService, etc.
+ */
 // src/context/ExtensionContext.ts
 import * as vscode from 'vscode';
 import { OllamaService } from '../api/OllamaService';

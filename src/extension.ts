@@ -1,4 +1,8 @@
-// src/extension.ts
+/**
+ * @file Fichero principal y punto de entrada de la extensión "Ollama Code Analyzer".
+ * Se encarga de la activación y desactivación de la extensión, inicializando
+ * todos los servicios, comandos y listeners necesarios para su funcionamiento.
+ */
 import * as vscode from 'vscode';
 import { CoreExtensionContext } from './context/ExtensionContext';
 import { registerAllCommands } from './commands';

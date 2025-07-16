@@ -1,3 +1,9 @@
+/**
+ * @file Servicio principal para el análisis de código.
+ * Orquesta el proceso de análisis, desde la obtención del prompt hasta la
+ * comunicación con OllamaService y la presentación de los resultados
+ * en forma de diagnósticos en el editor.
+ */
 // src/services/CodeAnalyzer.ts
 import * as vscode from 'vscode';
 import { OllamaService } from '../api/OllamaService';

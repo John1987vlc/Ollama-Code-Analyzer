@@ -1,3 +1,9 @@
+/**
+ * @file Utilidades para gestionar la exclusión de archivos.
+ * Construye un patrón de exclusión para las búsquedas de archivos en el
+ * proyecto, combinando patrones por defecto, del `.gitignore` y de la
+ * configuración de VS Code.
+ */
 // src/utils/ignoreUtils.ts
 import * as vscode from 'vscode';
 import * as fs from 'fs/promises';

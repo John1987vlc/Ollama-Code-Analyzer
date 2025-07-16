@@ -1,3 +1,9 @@
+/**
+ * @file Servicio para interactuar con la API de Ollama.
+ * Gestiona todas las comunicaciones con el servidor de Ollama, incluyendo
+ * la obtención de modelos, la generación de texto y el streaming de respuestas.
+ * También maneja la configuración de la URL base y los tiempos de espera.
+ */
 // src/services/OllamaService.ts
 import * as vscode from 'vscode';
 import * as path from 'path';
