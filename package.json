@@ -30,56 +30,66 @@
     "onLanguage:sql"
   ],
   "main": "./out/extension.js",
-  "contributes": {
+   "contributes": {
     "commands": [
       {
         "command": "ollamaCodeAnalyzer.analyzeCurrentDocument",
-        "title": "Analizar Documento Actual",
+        "title": "%command.analyzeCurrentDocument.title%",
         "category": "Gemma3n Analysis"
       },
       {
         "command": "ollamaCodeAnalyzer.configureModel",
-        "title": "Configurar Modelo",
+        "title": "%command.configureModel.title%",
         "category": "Gemma3n Analysis"
       },
       {
         "command": "ollamaCodeAnalyzer.generateCodeFromComment",
-        "title": "Generar código desde comentario (///, #, /*...*/)",
+        "title": "%command.generateCodeFromComment.title%",
         "category": "Gemma3n Analysis"
       },
       {
         "command": "ollamaCodeAnalyzer.findSuggestions",
-        "title": "Buscar sugerencias de refactorización",
+        "title": "%command.findSuggestions.title%",
         "category": "Gemma3n Analysis"
       },
       {
         "command": "ollamaCodeAnalyzer.conceptualRefactor",
-        "title": "Proponer refactorización inteligente",
+        "title": "%command.conceptualRefactor.title%",
         "category": "Gemma3n Analysis"
       },
       {
         "command": "ollamaCodeAnalyzer.explainCode",
-        "title": "Explicar código seleccionado",
+        "title": "%command.explainCode.title%",
         "category": "Gemma3n Analysis"
       },
       {
         "command": "ollamaCodeAnalyzer.checkCompanyStandards",
-        "title": "Validar estándares de empresa",
+        "title": "%command.checkCompanyStandards.title%",
         "category": "Gemma3n Analysis"
       },
       {
         "command": "ollamaCodeAnalyzer.generateUnitTest",
-        "title": "Generar prueba unitaria",
+        "title": "%command.generateUnitTest.title%",
         "category": "Gemma3n Analysis"
       },
       {
         "command": "ollamaCodeAnalyzer.findDuplicateLogic",
-        "title": "Detectar lógica duplicada",
+        "title": "%command.findDuplicateLogic.title%",
         "category": "Gemma3n Analysis"
       },
       {
         "command": "ollamaCodeAnalyzer.generateUmlDiagram",
-        "title": "Generar Diagrama UML del proyecto",
+        "title": "%command.generateUmlDiagram.title%",
+        "category": "Gemma3n Analysis"
+      },
+      {
+        "command": "ollamaCodeAnalyzer.configureLanguage",
+        "title": "%command.configureLanguage.title%",
+        "category": "Gemma3n Analysis"
+      },
+      {
+        "command": "ollamaCodeAnalyzer.checkProjectStandards",
+        "title": "%command.checkProjectStandards.title%",
         "category": "Gemma3n Analysis"
       }
     ],
@@ -99,217 +109,63 @@
       ],
       "gemma3nAnalysisSubmenu": [
         {
-          "command": "ollamaCodeAnalyzer.analyzeCurrentDocument",
-          "group": "1_analysis@1"
-        },
-        {
-          "command": "ollamaCodeAnalyzer.checkCompanyStandards",
-          "group": "1_analysis@2"
-        },
-        {
-          "command": "ollamaCodeAnalyzer.findDuplicateLogic",
-          "group": "1_analysis@3"
-        },
-        {
-          "command": "ollamaCodeAnalyzer.findSuggestions",
-          "group": "2_refactor@1"
-        },
-        {
           "command": "ollamaCodeAnalyzer.conceptualRefactor",
-          "group": "2_refactor@2"
+          "group": "1_selection@1",
+          "when": "editorHasSelection"
         },
         {
           "command": "ollamaCodeAnalyzer.explainCode",
-          "group": "2_refactor@3"
+          "group": "1_selection@2",
+          "when": "editorHasSelection"
         },
         {
           "command": "ollamaCodeAnalyzer.generateUnitTest",
-          "group": "2_refactor@4"
+          "group": "1_selection@3",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "ollamaCodeAnalyzer.analyzeCurrentDocument",
+          "group": "2_file@1"
+        },
+        {
+          "command": "ollamaCodeAnalyzer.checkCompanyStandards",
+          "group": "2_file@2"
+        },
+        {
+          "command": "ollamaCodeAnalyzer.findDuplicateLogic",
+          "group": "2_file@3"
+        },
+        {
+          "command": "ollamaCodeAnalyzer.findSuggestions",
+          "group": "2_file@4"
         },
         {
           "command": "ollamaCodeAnalyzer.generateCodeFromComment",
-          "group": "3_generation@1"
+          "group": "2_file@5"
         },
         {
           "command": "ollamaCodeAnalyzer.generateUmlDiagram",
-          "group": "3_generation@2"
+          "group": "3_project@1"
         },
         {
-          "command": "ollamaCodeAnalyzer.configureModel",
-          "group": "9_utility@1"
+            "command": "ollamaCodeAnalyzer.checkProjectStandards",
+            "group": "3_project@2"
         }
       ]
     },
-    "keybindings": [
-      {
-        "command": "ollamaCodeAnalyzer.generateCodeFromComment",
-        "key": "ctrl+shift+j",
-        "mac": "cmd+shift+j",
-        "when": "editorTextFocus"
-      },
-      {
-        "command": "ollamaCodeAnalyzer.conceptualRefactor",
-        "key": "ctrl+shift+h",
-        "mac": "cmd+shift+h",
-        "when": "editorTextFocus && editorHasSelection"
-      },
-      {
-        "command": "ollamaCodeAnalyzer.explainCode",
-        "key": "ctrl+shift+e",
-        "mac": "cmd+shift+e",
-        "when": "editorTextFocus && editorHasSelection"
-      },
-      {
-        "command": "ollamaCodeAnalyzer.generateUnitTest",
-        "key": "ctrl+shift+u",
-        "mac": "cmd+shift+u",
-        "when": "editorTextFocus && editorHasSelection"
-      },
-      {
-        "command": "ollamaCodeAnalyzer.checkCompanyStandards",
-        "key": "ctrl+shift+s",
-        "mac": "cmd+shift+s",
-        "when": "editorTextFocus"
-      }
-    ],
     "configuration": {
       "title": "Ollama Code Analyzer",
       "properties": {
+        "ollamaCodeAnalyzer.outputLanguage": {
+            "type": "string",
+            "default": "Español",
+            "enum": ["Español", "English"],
+            "description": "%config.outputLanguage.description%"
+        },
         "ollamaCodeAnalyzer.baseUrl": {
           "type": "string",
           "default": "http://localhost:11434",
-          "description": "URL base del servicio Ollama"
-        },
-        "ollamaCodeAnalyzer.model": {
-          "type": "string",
-          "default": "qwen3:0.6b",
-          "description": "Modelo de Ollama a usar para análisis de código"
-        },
-        "ollamaCodeAnalyzer.timeout": {
-          "type": "number",
-          "default": 90000,
-          "description": "Timeout en milisegundos para las solicitudes (90 segundos por defecto)"
-        },
-        "ollamaCodeAnalyzer.autoAnalyze": {
-          "type": "boolean",
-          "default": false,
-          "description": "Analizar automáticamente el código mientras escribes"
-        },
-        "ollamaCodeAnalyzer.analyzeOnOpen": {
-          "type": "boolean",
-          "default": false,
-          "description": "Analizar automáticamente cuando se abre un archivo"
-        },
-        "ollamaCodeAnalyzer.supportedLanguages": {
-          "type": "array",
-          "default": [
-             "csharp",
-            "javascript",
-            "typescript",
-            "python",
-            "java",
-            "cpp",
-            "c",
-            "sql"
-          ],
-          "description": "Lenguajes soportados para análisis automático",
-          "items": {
-            "type": "string"
-          }
-        },
-        "ollamaCodeAnalyzer.maxLines": {
-          "type": "number",
-          "default": 500,
-          "description": "Número máximo de líneas para analizar (evita archivos muy grandes)"
-        },
-        "ollamaCodeAnalyzer.debounceDelay": {
-          "type": "number",
-          "default": 5000,
-          "description": "Delay en milisegundos antes de analizar después de cambios (debounce)"
-        },
-        "ollamaCodeAnalyzer.gitea.baseUrl": {
-          "type": "string",
-          "default": "",
-          "description": "URL base de tu instancia de Gitea (ej. https://gitea.com)"
-        },
-        "ollamaCodeAnalyzer.gitea.token": {
-          "type": "string",
-          "default": "",
-          "description": "Token de acceso de Gitea"
-        },
-        "ollamaCodeAnalyzer.gitea.organization": {
-          "type": "string",
-          "default": "",
-          "description": "Organización en Gitea"
-        },
-        "ollamaCodeAnalyzer.gitea.repository": {
-          "type": "string",
-          "default": "",
-          "description": "Repositorio en Gitea"
-        },
-        "ollamaCodeAnalyzer.customPrompts": {
-          "type": "object",
-          "title": "Prompts Personalizados",
-          "description": "Define instrucciones personalizadas para cada tipo de acción de la IA.",
-          "default": {},
-          "properties": {
-            "analysis": {
-              "type": "object",
-              "title": "Análisis de Código",
-              "description": "Instrucciones para el análisis general de calidad de código.",
-              "properties": {
-                "additional_instructions": {
-                  "type": "array",
-                  "description": "Lista de reglas adicionales para el análisis. Cada elemento es una nueva regla.",
-                  "items": {
-                    "type": "string"
-                  },
-                  "default": []
-                }
-              }
-            },
-            "conceptual_refactor": {
-              "type": "object",
-              "title": "Refactorización Conceptual",
-              "description": "Contexto para la refactorización inteligente.",
-              "properties": {
-                "context": {
-                  "type": "string",
-                  "description": "Contexto adicional para guiar la refactorización (ej: 'Estamos migrando a TypeScript').",
-                  "default": ""
-                }
-              }
-            },
-            "generation": {
-              "type": "object",
-              "title": "Generación de Código",
-              "description": "Guías para la generación de nuevo código.",
-              "properties": {
-                "style_guide": {
-                  "type": "string",
-                  "description": "Guía de estilo a seguir (ej: 'Usar estilo Airbnb, async/await para promesas').",
-                  "default": ""
-                }
-              }
-            },
-            "test_generation": {
-              "type": "object",
-              "title": "Generación de Pruebas",
-              "description": "Guías para generar pruebas unitarias.",
-              "properties": {
-                "preferred_framework": {
-                  "type": "string",
-                  "description": "Framework de testing preferido (ej: 'Jest', 'Mocha').",
-                  "default": "Jest"
-                },
-                "testing_style": {
-                  "type": "string",
-                  "description": "Estilo de las pruebas a generar (ej: 'Enfocarse en pruebas de caja negra').",
-                  "default": ""
-                }
-              }
-            }
-          }
+          "description": "%config.baseUrl.description%"
         }
       }
     }
@@ -352,9 +208,8 @@
   "homepage": "https://github.com/John1987vlc/Ollama-Code-Analyzer#readme",
   "license": "CC0-1.0",
   "dependencies": {
-    "@types/markdown-it-plantuml": "^1.4.5",
+    "@kazumatu981/markdown-it-kroki": "^1.3.6",
     "markdown-it": "^14.1.0",
-    "markdown-it-plantuml": "^1.4.1",
     "node-fetch": "^2.7.0"
   }
 }

@@ -3,8 +3,8 @@
 import * as vscode from 'vscode';
 import { CoreExtensionContext } from '../context/ExtensionContext';
 import { UnifiedResponseWebview } from '../ui/webviews';
-import { getExcludePattern } from '../utils/ignoreUtils'; // <-- 1. Importar la nueva utilidad
-
+import { getExcludePattern } from '../utils/ignoreUtils';
+import { I18n } from '../internationalization/i18n'; // <-- Importar
 
 // Función para mapear IDs de lenguaje a extensiones de archivo
 function getExtensionsForLanguage(languageId: string): string[] {
@@ -26,7 +26,7 @@ export async function runAnalysis(
     coreCtx: CoreExtensionContext,
     vsCodeCtx: vscode.ExtensionContext
 ) {
-    const title = 'Análisis de Código con Ollama';
+    const title = I18n.t('command.analyzeFile.title');
     const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer');
     const model = config.get<string>('model');
 
@@ -45,12 +45,12 @@ export async function runAnalysis(
         if (result && result.response && UnifiedResponseWebview.currentPanel) {
             UnifiedResponseWebview.currentPanel.showResponse(result.response);
         } else if (UnifiedResponseWebview.currentPanel) {
-            UnifiedResponseWebview.currentPanel.showResponse("Ollama no devolvió una respuesta válida.");
+            UnifiedResponseWebview.currentPanel.showResponse(I18n.t('error.noValidResponse'));
         }
     } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Error desconocido";
+        const errorMessage = error instanceof Error ? error.message : I18n.t('error.unknown');
         if (UnifiedResponseWebview.currentPanel) {
-            UnifiedResponseWebview.currentPanel.showResponse(`Error durante el análisis: ${errorMessage}`);
+            UnifiedResponseWebview.currentPanel.showResponse(`${I18n.t('error.duringAnalysis')}: ${errorMessage}`);
         }
     }
 }
@@ -62,7 +62,7 @@ export function registerOllamaCommands(coreCtx: CoreExtensionContext, vsCodeCtx:
         if (editor) {
             runAnalysis(editor.document, coreCtx, vsCodeCtx);
         } else {
-            vscode.window.showInformationMessage("Por favor, abre un archivo para analizar.");
+            vscode.window.showInformationMessage(I18n.t('command.analyzeFile.noFileOpen'));
         }
     });
 
@@ -71,7 +71,7 @@ export function registerOllamaCommands(coreCtx: CoreExtensionContext, vsCodeCtx:
         if (editor) {
             runAnalysis(editor.document, coreCtx, vsCodeCtx);
         } else {
-            vscode.window.showInformationMessage("Por favor, abre un archivo para analizar.");
+            vscode.window.showInformationMessage(I18n.t('command.analyzeFile.noFileOpen'));
         }
     });
 
@@ -86,7 +86,7 @@ export function registerOllamaCommands(coreCtx: CoreExtensionContext, vsCodeCtx:
         const model = config.get<string>('model');
 
         if (!model) {
-            vscode.window.showErrorMessage("No se ha configurado un modelo de Ollama en los ajustes.");
+            vscode.window.showErrorMessage(I18n.t('error.noModelConfigured'));
             return;
         }
 
@@ -99,15 +99,15 @@ export function registerOllamaCommands(coreCtx: CoreExtensionContext, vsCodeCtx:
                 if (result && result.response) {
                     UnifiedResponseWebview.currentPanel.showResponse(result.response);
                 } else {
-                    UnifiedResponseWebview.currentPanel.showResponse("Ollama no devolvió una respuesta válida o el resultado fue nulo.");
+                    UnifiedResponseWebview.currentPanel.showResponse(I18n.t('error.noValidResponse'));
                 }
             }
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : "Error desconocido";
+            const errorMessage = error instanceof Error ? error.message : I18n.t('error.unknown');
             if (UnifiedResponseWebview.currentPanel) {
-                UnifiedResponseWebview.currentPanel.showResponse(`Error al ejecutar el comando: ${errorMessage}`);
+                UnifiedResponseWebview.currentPanel.showResponse(`${I18n.t('error.executingCommand')}: ${errorMessage}`);
             } else {
-                vscode.window.showErrorMessage(`Error en el comando: ${errorMessage}`);
+                vscode.window.showErrorMessage(`${I18n.t('error.inCommand')}: ${errorMessage}`);
             }
         }
     };
@@ -116,7 +116,7 @@ export function registerOllamaCommands(coreCtx: CoreExtensionContext, vsCodeCtx:
     const generateCodeFromCommentCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.generateCodeFromComment', () => {
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
-            vscode.window.showInformationMessage("Por favor, abre un archivo para usar esta función.");
+            vscode.window.showInformationMessage(I18n.t('command.generateCode.noFileOpen'));
             return;
         }
 
@@ -129,12 +129,11 @@ export function registerOllamaCommands(coreCtx: CoreExtensionContext, vsCodeCtx:
         const instruction = match ? match[1].trim() : '';
 
         if (!instruction) {
-            vscode.window.showInformationMessage('La instrucción de generación está vacía.');
+            vscode.window.showInformationMessage(I18n.t('command.generateCode.emptyInstruction'));
             return;
         }
 
-
-        executeCommandWithWebview('Generación de Código desde Comentario', async () => {
+        executeCommandWithWebview(I18n.t('command.generateCode.title'), async () => {
             const languageId = editor.document.languageId;
             const model = vscode.workspace.getConfiguration('ollamaCodeAnalyzer').get<string>('model')!;
 
@@ -148,7 +147,7 @@ export function registerOllamaCommands(coreCtx: CoreExtensionContext, vsCodeCtx:
     const findSuggestionsCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.findSuggestions', () => {
         const editor = vscode.window.activeTextEditor;
         if (!editor) return;
-        executeCommandWithWebview('Sugerencias de Refactorización', async () => {
+        executeCommandWithWebview(I18n.t('command.findSuggestions.title'), async () => {
             const prompt = await coreCtx.promptingService.getRefactorPrompt(editor.document.getText(), editor.document.languageId);
             const response = await coreCtx.ollamaService.generate(prompt, vscode.workspace.getConfiguration('ollamaCodeAnalyzer').get<string>('model')!);
             return { prompt, response: response?.response ?? null };
@@ -158,10 +157,10 @@ export function registerOllamaCommands(coreCtx: CoreExtensionContext, vsCodeCtx:
     const conceptualRefactorCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.conceptualRefactor', () => {
         const editor = vscode.window.activeTextEditor;
         if (!editor || editor.selection.isEmpty) {
-            vscode.window.showInformationMessage("Por favor, selecciona código para la refactorización.");
+            vscode.window.showInformationMessage(I18n.t('command.conceptualRefactor.noSelection'));
             return;
         }
-        executeCommandWithWebview('Refactorización Conceptual', async () => {
+        executeCommandWithWebview(I18n.t('command.conceptualRefactor.title'), async () => {
             const selectedCode = editor.document.getText(editor.selection);
             const prompt = await coreCtx.promptingService.getConceptualRefactorPrompt(selectedCode, editor.document.languageId);
             const response = await coreCtx.ollamaService.generate(prompt, vscode.workspace.getConfiguration('ollamaCodeAnalyzer').get<string>('model')!);
@@ -172,10 +171,10 @@ export function registerOllamaCommands(coreCtx: CoreExtensionContext, vsCodeCtx:
     const generateUnitTestCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.generateUnitTest', () => {
         const editor = vscode.window.activeTextEditor;
         if (!editor || editor.selection.isEmpty) {
-            vscode.window.showInformationMessage("Selecciona código para generar un test.");
+            vscode.window.showInformationMessage(I18n.t('command.generateUnitTest.noSelection'));
             return;
         }
-        executeCommandWithWebview('Generación de Test Unitario', async () => {
+        executeCommandWithWebview(I18n.t('command.generateUnitTest.title'), async () => {
             const selectedCode = editor.document.getText(editor.selection);
             const prompt = await coreCtx.promptingService.getUnitTestPrompt(selectedCode, editor.document.languageId);
             const response = await coreCtx.ollamaService.generate(prompt, vscode.workspace.getConfiguration('ollamaCodeAnalyzer').get<string>('model')!);
@@ -186,10 +185,10 @@ export function registerOllamaCommands(coreCtx: CoreExtensionContext, vsCodeCtx:
     const explainCodeCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.explainCode', () => {
         const editor = vscode.window.activeTextEditor;
         if (!editor || editor.selection.isEmpty) {
-            vscode.window.showInformationMessage("Selecciona código para explicar.");
+            vscode.window.showInformationMessage(I18n.t('command.explainCode.noSelection'));
             return;
         }
-        executeCommandWithWebview('Explicación de Código', async () => {
+        executeCommandWithWebview(I18n.t('command.explainCode.title'), async () => {
             const selectedCode = editor.document.getText(editor.selection);
             const prompt = await coreCtx.promptingService.getExplainPrompt(selectedCode, editor.document.languageId);
             const response = await coreCtx.ollamaService.generate(prompt, vscode.workspace.getConfiguration('ollamaCodeAnalyzer').get<string>('model')!);
@@ -200,10 +199,10 @@ export function registerOllamaCommands(coreCtx: CoreExtensionContext, vsCodeCtx:
     const checkStandardsCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.checkCompanyStandards', () => {
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
-            vscode.window.showInformationMessage("Por favor, abre un archivo para validar sus estándares.");
+            vscode.window.showInformationMessage(I18n.t('command.checkStandards.noFileOpen'));
             return;
         }
-        executeCommandWithWebview('Validación de Estándares', async () => {
+        executeCommandWithWebview(I18n.t('command.checkStandards.title'), async () => {
             const code = editor.document.getText();
             const languageId = editor.document.languageId;
             const model = vscode.workspace.getConfiguration('ollamaCodeAnalyzer').get<string>('model')!;
@@ -216,10 +215,10 @@ export function registerOllamaCommands(coreCtx: CoreExtensionContext, vsCodeCtx:
     const findDuplicateLogicCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.findDuplicateLogic', () => {
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
-            vscode.window.showInformationMessage("Por favor, abre un archivo para detectar lógica duplicada.");
+            vscode.window.showInformationMessage(I18n.t('command.findDuplicateLogic.noFileOpen'));
             return;
         }
-        executeCommandWithWebview('Detección de Lógica Duplicada', async () => {
+        executeCommandWithWebview(I18n.t('command.findDuplicateLogic.title'), async () => {
             const code = editor.document.getText();
             const languageId = editor.document.languageId;
             const model = vscode.workspace.getConfiguration('ollamaCodeAnalyzer').get<string>('model')!;
@@ -230,115 +229,158 @@ export function registerOllamaCommands(coreCtx: CoreExtensionContext, vsCodeCtx:
     });
 
     const generateUmlDiagramCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.generateUmlDiagram', async () => {
-        const title = 'Generación de Diagrama UML';
+        const title = I18n.t('command.generateUmlDiagram.title');
 
-        const rootFolderUri = await vscode.window.showOpenDialog({
-            canSelectFolders: true,
-            canSelectFiles: false,
-            canSelectMany: false,
-            openLabel: 'Seleccionar Carpeta para Analizar'
-        });
-
-        if (!rootFolderUri || rootFolderUri.length === 0) return;
+        if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
+            vscode.window.showInformationMessage(I18n.t('command.generateUmlDiagram.noWorkspace'));
+            return;
+        }
         
-        const analysisRoot = rootFolderUri[0];
+        const analysisRoot = vscode.workspace.workspaceFolders[0].uri;
 
         const findProjectFiles = async (rootUri: vscode.Uri): Promise<{ path: string, content: string }[]> => {
-        const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer');
-        const supportedLanguages = config.get<string[]>('supportedLanguages', []);
-        
-        const allExtensions = supportedLanguages.flatMap(getExtensionsForLanguage);
-        const uniqueExtensions = [...new Set(allExtensions)];
+            const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer');
+            const supportedLanguages = config.get<string[]>('supportedLanguages', []);
+            
+            const allExtensions = supportedLanguages.flatMap(getExtensionsForLanguage);
+            const uniqueExtensions = [...new Set(allExtensions)];
 
-        if (uniqueExtensions.length === 0) {
-            return [];
-        }
+            if (uniqueExtensions.length === 0) {
+                return [];
+            }
 
-        const includePattern = `**/*{${uniqueExtensions.join(',')}}`;
-        // 2. Obtener el patrón de exclusión dinámicamente
-        const excludePattern = await getExcludePattern(rootUri);
-        
-        // 3. Usar el patrón de exclusión en la búsqueda de archivos
-        const files = await vscode.workspace.findFiles(includePattern, excludePattern);
+            const includePattern = `**/*{${uniqueExtensions.join(',')}}`;
+            const excludePattern = await getExcludePattern(rootUri);
+            
+            const files = await vscode.workspace.findFiles(includePattern, excludePattern);
 
-        const fileContents = await Promise.all(
-            files.map(async (uri) => {
-                const document = await vscode.workspace.openTextDocument(uri);
-                const relativePath = vscode.workspace.asRelativePath(uri, false);
-                return {
-                    path: relativePath,
-                    content: document.getText()
-                };
-            })
-        );
-        return fileContents;
-    };
+            const fileContents = await Promise.all(
+                files.map(async (uri) => {
+                    const document = await vscode.workspace.openTextDocument(uri);
+                    const relativePath = vscode.workspace.asRelativePath(uri, false);
+                    return {
+                        path: relativePath,
+                        content: document.getText()
+                    };
+                })
+            );
+            return fileContents;
+        };
 
         // Inicia la webview
         UnifiedResponseWebview.createOrShow(vsCodeCtx.extensionUri, title);
         
         const files = await findProjectFiles(analysisRoot);
         if (files.length === 0) {
-            vscode.window.showInformationMessage("No se encontraron archivos de código soportados. Revisa la configuración 'supportedLanguages'.");
-            UnifiedResponseWebview.currentPanel?.showResponse("No se encontraron archivos para analizar.");
+            vscode.window.showInformationMessage(I18n.t('command.generateUmlDiagram.noFiles'));
+            UnifiedResponseWebview.currentPanel?.showResponse(I18n.t('command.generateUmlDiagram.noFilesToAnalyze'));
             return;
         }
 
-         UnifiedResponseWebview.currentPanel?.showUmlInitialLoading(files.length);
+        UnifiedResponseWebview.currentPanel?.showUmlInitialLoading(files.length);
 
-    const projectStructure: any[] = [];
-    const model = vscode.workspace.getConfiguration('ollamaCodeAnalyzer').get<string>('model')!;
-
-    // FASE 1: EXTRACCIÓN
-    let extractedComponents: any[] = [];
-    for (const file of files) {
-        const structure = await coreCtx.ollamaService.extractUmlStructureFromFile(file, model);
-        let componentsFound = "Analizando...";
-        if (structure && structure.components && structure.components.length > 0) {
-            extractedComponents.push(...structure.components);
-            componentsFound = structure.components.map((c: any) => `${c.name} (${c.type})`).join(', ');
-        } else {
-            componentsFound = "No se encontraron componentes estructurales.";
+        const projectStructure: any[] = [];
+        const model = vscode.workspace.getConfiguration('ollamaCodeAnalyzer').get<string>('model')!;
+        
+        // FASE 1: EXTRACCIÓN
+        const allFileStructures: any[] = []; 
+        for (const file of files) {
+            const structure = await coreCtx.ollamaService.extractUmlStructureFromFile(file, model);
+            let componentsFound = I18n.t('command.generateUmlDiagram.analyzing');
+            if (structure) {
+                // Guardamos el objeto JSON completo del archivo.
+                allFileStructures.push(structure); 
+                
+                if (structure.components && structure.components.length > 0) {
+                    componentsFound = structure.components.map((c: any) => `${c.name} (${c.type})`).join(', ');
+                } else {
+                    componentsFound = I18n.t('command.generateUmlDiagram.noComponents');
+                }
+            } else {
+                componentsFound = I18n.t('command.generateUmlDiagram.cannotAnalyze');
+            }
+            UnifiedResponseWebview.currentPanel?.showUmlGenerationProgress(file.path, componentsFound);
         }
-        UnifiedResponseWebview.currentPanel?.showUmlGenerationProgress(file.path, componentsFound);
-    }
-    
-    // [MEJORADO] Unificar y filtrar rigurosamente los componentes.
-    const componentMap = new Map<string, any>();
-    for (const component of extractedComponents) {
-        // Ignorar placeholders y componentes sin un tipo válido.
-        const isValidType = ['class', 'interface', 'enum'].includes(component.type);
-        if (!component.name || component.name === 'ComponentName' || !isValidType) {
-            continue;
-        }
-
-        if (componentMap.has(component.name)) {
-            const existing = componentMap.get(component.name);
-            if (component.relationships) {
-                existing.relationships = [...(existing.relationships || []), ...component.relationships];
-                existing.relationships = existing.relationships.filter((rel: any, index: number, self: any[]) =>
-                    index === self.findIndex((r: any) => r.target === rel.target && r.type === rel.type)
-                );
+        
+        // FASE 2: SÍNTESIS
+        if (allFileStructures.length > 0) {
+            const finalUmlContent = await coreCtx.ollamaService.synthesizeUmlDiagram(allFileStructures, model);
+            if (finalUmlContent && UnifiedResponseWebview.currentPanel) {
+                const finalResponse = `${I18n.t('command.generateUmlDiagram.diagramGenerated')}\n\n\`\`\`plantuml\n${finalUmlContent}\n\`\`\``;
+                UnifiedResponseWebview.currentPanel.showResponse(finalResponse, allFileStructures); 
+            } else {
+                UnifiedResponseWebview.currentPanel?.showResponse(I18n.t('command.generateUmlDiagram.cannotGenerateFinal'), allFileStructures);
             }
         } else {
-            componentMap.set(component.name, { ...component });
+            UnifiedResponseWebview.currentPanel?.showResponse(I18n.t('command.generateUmlDiagram.noValidStructure'));
         }
-    }
-    const finalProjectStructure = Array.from(componentMap.values());
+    });
 
-    // FASE 2: SÍNTESIS
-    if (finalProjectStructure.length > 0) {
-        const finalUmlContent = await coreCtx.ollamaService.synthesizeUmlDiagram(finalProjectStructure, model);
-        if (finalUmlContent && UnifiedResponseWebview.currentPanel) {
-            const finalResponse = `A continuación se muestra el diagrama UML generado a partir de la estructura del proyecto.\n\n\`\`\`plantuml\n${finalUmlContent}\n\`\`\``;
-            UnifiedResponseWebview.currentPanel.showResponse(finalResponse, finalProjectStructure);
-        } else {
-             UnifiedResponseWebview.currentPanel?.showResponse("El modelo no pudo generar el diagrama final a partir de la estructura extraída.", finalProjectStructure);
+    const configureLanguageCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.configureLanguage', _configureLanguage);
+
+    // [NUEVO] Comando para validar estándares de todo el proyecto
+    const checkProjectStandardsCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.checkProjectStandards', async () => {
+        const title = I18n.t('command.checkProjectStandards.title');
+        const rootFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!rootFolder) {
+            vscode.window.showInformationMessage(I18n.t('command.checkProjectStandards.noWorkspace'));
+            return;
         }
-    } else {
-        UnifiedResponseWebview.currentPanel?.showResponse("No se pudo extraer ninguna estructura válida y relevante de los archivos del proyecto para generar un diagrama.");
-    }
-});
+
+        const findProjectFiles = async (rootUri: vscode.Uri): Promise<{ path: string, content: string }[]> => {
+            const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer');
+            const supportedLanguages = config.get<string[]>('supportedLanguages', []);
+            
+            const allExtensions = supportedLanguages.flatMap(getExtensionsForLanguage);
+            const uniqueExtensions = [...new Set(allExtensions)];
+
+            if (uniqueExtensions.length === 0) {
+                return [];
+            }
+
+            const includePattern = `**/*{${uniqueExtensions.join(',')}}`;
+            const excludePattern = await getExcludePattern(rootUri);
+            
+            const files = await vscode.workspace.findFiles(includePattern, excludePattern);
+
+            const fileContents = await Promise.all(
+                files.map(async (uri) => {
+                    const document = await vscode.workspace.openTextDocument(uri);
+                    const relativePath = vscode.workspace.asRelativePath(uri, false);
+                    return {
+                        path: relativePath,
+                        content: document.getText()
+                    };
+                })
+            );
+            return fileContents;
+        };
+
+        UnifiedResponseWebview.createOrShow(vsCodeCtx.extensionUri, title);
+        const files = await findProjectFiles(rootFolder.uri);
+        if (files.length === 0) {
+            UnifiedResponseWebview.currentPanel?.showResponse(I18n.t('command.checkProjectStandards.noFiles'));
+            return;
+        }
+
+        UnifiedResponseWebview.currentPanel?.showUmlInitialLoading(files.length); // Reutilizamos la vista de carga de UML
+
+        const model = vscode.workspace.getConfiguration('ollamaCodeAnalyzer').get<string>('model')!;
+        let finalReport = `# ${I18n.t('command.checkProjectStandards.reportTitle')}\n\n`;
+
+        for (const file of files) {
+            const prompt = await coreCtx.promptingService.getStandardsPrompt(file.content, vscode.workspace.asRelativePath(file.path));
+            const result = await coreCtx.ollamaService.generate(prompt, model);
+            const response = result?.response ?? I18n.t('command.checkProjectStandards.noResponse');
+            
+            finalReport += `## ${I18n.t('command.checkProjectStandards.fileLabel')}: ${file.path}\n\n${response}\n\n---\n\n`;
+            
+            // Actualizamos el progreso en la vista
+            UnifiedResponseWebview.currentPanel?.showUmlGenerationProgress(file.path, I18n.t('command.checkProjectStandards.analyzed'));
+        }
+
+        UnifiedResponseWebview.currentPanel?.showResponse(finalReport);
+    });
 
     vsCodeCtx.subscriptions.push(
         analyzeDocumentCommand,
@@ -351,8 +393,23 @@ export function registerOllamaCommands(coreCtx: CoreExtensionContext, vsCodeCtx:
         checkStandardsCommand,
         findDuplicateLogicCommand,
         generateUmlDiagramCommand,
-        generateCodeFromCommentCommand
+        generateCodeFromCommentCommand,
+        configureLanguageCommand,
+        checkProjectStandardsCommand
     );
+}
+
+// [NUEVA] Función auxiliar para configurar el idioma
+async function _configureLanguage() {
+    const selectedLanguage = await vscode.window.showQuickPick(['Español', 'English'], {
+        placeHolder: I18n.t('command.configureLanguage.placeholder'),
+        title: I18n.t('command.configureLanguage.title')
+    });
+
+    if (selectedLanguage) {
+        await vscode.workspace.getConfiguration('ollamaCodeAnalyzer').update('outputLanguage', selectedLanguage, vscode.ConfigurationTarget.Global);
+        vscode.window.showInformationMessage(`${I18n.t('command.configureLanguage.success')}: ${selectedLanguage}`);
+    }
 }
 
 async function _configureModel(coreCtx: CoreExtensionContext) {
@@ -360,25 +417,25 @@ async function _configureModel(coreCtx: CoreExtensionContext) {
     try {
         const models = await ollamaService.getModels();
         if (!models || models.length === 0) {
-            vscode.window.showWarningMessage("No se encontraron modelos en Ollama. Asegúrate de que el servicio esté corriendo.");
+            vscode.window.showWarningMessage(I18n.t('command.configureModel.noModels'));
             return;
         }
 
         const modelItems = models.map(m => ({
             label: m.name,
-            description: `Familia: ${m.details.family}`
+            description: `${I18n.t('command.configureModel.family')}: ${m.details.family}`
         }));
 
         const selectedModel = await vscode.window.showQuickPick(modelItems, {
-            placeHolder: 'Selecciona el modelo de IA a utilizar',
-            title: 'Configurar Modelo'
+            placeHolder: I18n.t('command.configureModel.placeholder'),
+            title: I18n.t('command.configureModel.title')
         });
 
         if (selectedModel) {
             await vscode.workspace.getConfiguration('ollamaCodeAnalyzer').update('model', selectedModel.label, vscode.ConfigurationTarget.Global);
-            vscode.window.showInformationMessage(`Modelo actualizado a: ${selectedModel.label}`);
+            vscode.window.showInformationMessage(`${I18n.t('command.configureModel.success')}: ${selectedModel.label}`);
         }
     } catch (e) {
-        vscode.window.showErrorMessage(`No se pudieron obtener los modelos de Ollama: ${e instanceof Error ? e.message : 'Desconocido'}`);
+        vscode.window.showErrorMessage(`${I18n.t('command.configureModel.error')}: ${e instanceof Error ? e.message : I18n.t('error.unknown')}`);
     }
 }

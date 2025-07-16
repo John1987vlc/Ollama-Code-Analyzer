@@ -1,0 +1,38 @@
+{
+  "en": {
+    "extension.displayName": "Ollama Code Analyzer",
+    "extension.description": "Analyze your code in real time using local AI models with Ollama",
+    "command.analyzeCurrentDocument.title": "Analyze Current Document",
+    "command.configureModel.title": "Configure Model",
+    "command.generateCodeFromComment.title": "Generate code from comment (///, #, /*...*/)",
+    "command.findSuggestions.title": "Find refactoring suggestions",
+    "command.conceptualRefactor.title": "Propose intelligent refactoring",
+    "command.explainCode.title": "Explain selected code",
+    "command.checkCompanyStandards.title": "Validate company standards",
+    "command.generateUnitTest.title": "Generate unit test",
+    "command.findDuplicateLogic.title": "Detect duplicate logic",
+    "command.generateUmlDiagram.title": "Generate project UML Diagram",
+    "command.configureLanguage.title": "Configure Output Language",
+    "command.checkProjectStandards.title": "Validate project standards",
+    "config.outputLanguage.description": "Language for the AI's responses (comments, explanations, etc.).",
+    "config.baseUrl.description": "Base URL of the Ollama service"
+  },
+  "es": {
+    "extension.displayName": "Analizador de Código Ollama",
+    "extension.description": "Analiza tu código en tiempo real usando modelos de IA locales con Ollama",
+    "command.analyzeCurrentDocument.title": "Analizar Documento Actual",
+    "command.configureModel.title": "Configurar Modelo",
+    "command.generateCodeFromComment.title": "Generar código desde comentario (///, #, /*...*/)",
+    "command.findSuggestions.title": "Buscar sugerencias de refactorización",
+    "command.conceptualRefactor.title": "Proponer refactorización inteligente",
+    "command.explainCode.title": "Explicar código seleccionado",
+    "command.checkCompanyStandards.title": "Validar estándares de empresa",
+    "command.generateUnitTest.title": "Generar prueba unitaria",
+    "command.findDuplicateLogic.title": "Detectar lógica duplicada",
+    "command.generateUmlDiagram.title": "Generar Diagrama UML del proyecto",
+    "command.configureLanguage.title": "Configurar Idioma de Salida",
+    "command.checkProjectStandards.title": "Validar estándares del proyecto",
+    "config.outputLanguage.description": "Idioma para las respuestas de la IA (comentarios, explicaciones, etc.).",
+    "config.baseUrl.description": "URL base del servicio Ollama"
+  }
+}

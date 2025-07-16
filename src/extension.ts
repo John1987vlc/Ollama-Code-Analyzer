@@ -5,12 +5,15 @@ import { registerAllCommands } from './commands/index';
 import { registerEventListeners } from './events/listeners';
 import { checkServicesAvailability } from './utils/startupChecks';
 import { updateGiteaStatusBar } from './ui/statusBar';
-import {RefactorProvider} from './providers/RefactorProvider';
+import { RefactorProvider } from './providers/RefactorProvider';
+import { I18n } from './internationalization/i18n'; // <-- 1. Importar
 
 let coreContext: CoreExtensionContext;
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('Activando extensión "Ollama Code Analyzer"...');
+
+    I18n.initialize(context); 
 
     // 1. Inicializar el contexto central
     coreContext = new CoreExtensionContext(context);
@@ -23,7 +26,7 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     // 3. Registrar todos los comandos, proveedores y listeners
-    registerAllCommands(coreContext, context,giteaStatusBarItem);
+    registerAllCommands(coreContext, context);
     registerEventListeners(context,coreContext, giteaStatusBarItem);
     
     const codeActionProvider = vscode.languages.registerCodeActionsProvider(

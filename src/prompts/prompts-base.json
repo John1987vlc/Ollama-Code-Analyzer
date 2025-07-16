@@ -79,45 +79,54 @@
     ]
   },
   "uml_extract": {
-    "role": "You are a precise code-to-json analysis engine. Your only task is to analyze the given source code and extract its structure into a valid JSON object. Do not include explanations or any content outside the JSON object.",
-    "instructions": [
-      "Analyze ONLY the provided `${language}` source code from this specific file.",
-      "Identify all user-defined classes, interfaces, and enums present in the file.",
-      "IGNORE any standard library imports (e.g., os, json, sys, logging).",
-      "For each identified component, extract its relationships to other user-defined types, including inheritance, implementation, composition, aggregation, and dependency.",
-      "ONLY include relationships based on explicit imports or usage of project-internal types. DO NOT infer from standard library or external references.",
-      "If no user-defined class, interface, or enum is found, return a JSON object with an empty \"components\" array.",
-      "DO NOT fabricate or assume the existence of components. Your output must faithfully represent ONLY what is defined in the source code."
-    ],
-    "output_format": {
-      "title": "Respond ONLY with the following JSON structure:",
-      "format": {
-        "path": "${filePath}",
-        "components": [
-          {
-            "name": "UserDefinedClass",
-            "type": "class",
-            "relationships": [
-              {
-                "target": "AnotherUserClass",
-                "type": "dependency"
-              }
-            ]
-          }
-        ]
-      }
+  "role": "You are a precise code-to-json analysis engine. Your only task is to analyze the given source code and extract its structure into a valid JSON object. Do not include explanations or any content outside the JSON object.",
+  "instructions": [
+    "Analyze ONLY the provided `${language}` source code from this specific file.",
+    "Identify all user-defined classes, interfaces, and enums present in the file.",
+    "Also include any user-defined types that are referenced **in relationships**, even if not defined in the current file.",
+    "IGNORE any standard library or external imports (e.g., os, sys, json, PIL, requests).",
+    "For each identified component, extract its relationships to other user-defined types, including inheritance, implementation, composition, aggregation, dependency, and attribute references.",
+    "Ensure that all `target` types used in relationships appear as separate components somewhere in the project.",
+    "If no user-defined class, interface, or enum is found, return a JSON object with an empty \"components\" array.",
+    "DO NOT fabricate or assume the existence of components. Only report what is declared or explicitly referenced as user-defined."
+  ],
+  "output_format": {
+    "title": "Respond ONLY with the following JSON structure:",
+    "format": {
+      "path": "${filePath}",
+      "components": [
+        {
+          "name": "ComponentName",
+          "type": "class|enum|interface",
+          "relationships": [
+            {
+              "target": "OtherComponent",
+              "type": "composition|aggregation|dependency|inheritance|implementation|attribute"
+            }
+          ]
+        }
+      ]
     }
-  },
-  "uml_synthesize": {
-    "role": "You are a UML generation expert. Your task is to create a PlantUML class diagram from a JSON object. Respond ONLY with the PlantUML code.",
-    "instructions": [
-      "You will receive a JSON object representing the project structure.",
-      "Generate a complete PlantUML class diagram using ONLY components of type 'class', 'interface', or 'enum'.",
-      "Ignore all other component types, such as 'module', 'function', or unknown types.",
-      "Use standard PlantUML syntax for declarations: `class`, `interface`, and `enum`.",
-      "Use correct relationship arrows: `--|>` for inheritance, `..|>` for interface implementation, `*--` for composition, `o--` for aggregation, `-->` for dependency, and `..>` for indirect dependency.",
-      "Exclude all members (attributes or methods). Only component names and their relationships must be shown.",
-      "Begin the output with `@startuml` and end it with `@enduml`. DO NOT include any other text or commentary."
-    ]
   }
+},
+"uml_synthesize": {
+  "role": "You are a UML generation expert. Your task is to create a PlantUML class diagram from a JSON array where each object represents the structure of a file. Respond ONLY with the PlantUML code, without any markdown formatting around it.",
+  "instructions": [
+    "You will receive a JSON array. Each object in the array represents a single source file and contains its path and a list of its components (classes, interfaces, enums).",
+    "Your task is to generate a complete PlantUML class diagram from this data.",
+    "Follow these steps carefully:",
+    "1. Declare ALL components from every file using the correct syntax: 'class \"Name\"', 'interface \"Name\"', or 'enum \"Name\"'.",
+    "2. Then, iterate through all relationships and draw arrows using the following rules:",
+    "   - 'dependency': 'Target <.. Source'",
+    "   - 'composition': 'Target *-- Source'",
+    "   - 'inheritance': 'Target <|-- Source'",
+    "   - 'implementation': 'Target <|.. Source'",
+    "   - 'aggregation': 'Target o-- Source'",
+    "   - 'attribute': 'Target <-- Source : has'",
+    "3. If a component is referenced as a relationship target but was not declared in any component list, STILL declare it with its name and an appropriate type (default to 'class' if unknown).",
+    "4. Do NOT include methods or attributes, only class/interface/enum names and relationships.",
+    "5. Begin with '@startuml' and end with '@enduml'. Do NOT include any other text or markdown formatting.",
+    "6. Each component must be declared once. Handle duplicated names (like 'UserDefinedClass') by appending a unique suffix (e.g., 'UserDefinedClass_1', 'UserDefinedClass_2') if they come from different files."
+  ]
+}
 }

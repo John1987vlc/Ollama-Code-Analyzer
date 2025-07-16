@@ -1,7 +1,9 @@
 // src/ui/webviews.ts
 import * as vscode from 'vscode';
 import MarkdownIt from 'markdown-it';
-import plantuml from 'markdown-it-plantuml';
+const kroki = require('@kazumatu981/markdown-it-kroki');
+
+
 
 interface ParsedWebviewContent {
     thinking: string;
@@ -76,14 +78,14 @@ export class UnifiedResponseWebview {
         UnifiedResponseWebview.currentPanel = new UnifiedResponseWebview(panel, extensionUri);
     }
 
-    private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
+  private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
         this._panel = panel;
         this._extensionUri = extensionUri;
 
-        this.md = new MarkdownIt({ html: true, linkify: true, typographer: true }).use(plantuml);
+        // [CAMBIO] Usamos el nuevo plugin de Kroki
+        this.md = new MarkdownIt({ html: true, linkify: true, typographer: true }).use(kroki);
 
         this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
-
         this._panel.webview.onDidReceiveMessage(
             message => {
                 if (message.command === 'copyCode') {
@@ -139,7 +141,7 @@ export class UnifiedResponseWebview {
         this._panel.webview.html = this._getHtmlForWebview(parsedContent);
     }
 
-    private parseResponse(text: string): ParsedWebviewContent {
+   private parseResponse(text: string): ParsedWebviewContent {
         const codeBlocks: { language: string; code: string }[] = [];
         let thinking = "El modelo no proporcionó una cadena de pensamiento explícita.";
         let content = typeof text === 'string' ? text : '';
@@ -147,13 +149,12 @@ export class UnifiedResponseWebview {
         const thinkMatch = content.match(/<think>([\s\S]*?)<\/think>/);
         if (thinkMatch && thinkMatch[1]) {
             thinking = thinkMatch[1].trim();
+            // Eliminamos el bloque de pensamiento del contenido principal
             content = content.replace(thinkMatch[0], '').trim();
         }
         
-        content.replace(/```(\w*)\s*([\s\S]*?)```/g, (match, language, code) => {
-            codeBlocks.push({ language: language || 'plaintext', code: code.trim() });
-            return '';
-        });
+        // La expresión regular que eliminaba los bloques de código ha sido eliminada.
+        // Ahora 'content' conserva el bloque ```plantuml para que sea renderizado.
 
         return { thinking, markdownContent: content, codeBlocks };
     }
@@ -215,7 +216,7 @@ export class UnifiedResponseWebview {
             `;
         }
 
-        return `<!DOCTYPE html>
+      return `<!DOCTYPE html>
             <html lang="es">
             <head>
                 <meta charset="UTF-8">
@@ -224,7 +225,8 @@ export class UnifiedResponseWebview {
                     default-src 'none'; 
                     style-src ${this._panel.webview.cspSource}; 
                     script-src 'nonce-${nonce}'; 
-                    img-src ${this._panel.webview.cspSource} https://www.plantuml.com;
+                    /* [CAMBIO] Permitimos imágenes desde el servidor de kroki.io */
+                    img-src ${this._panel.webview.cspSource} https://kroki.io;
                 ">
                 <title>Respuesta de Ollama</title>
                 <link href="${styleUri}" rel="stylesheet">

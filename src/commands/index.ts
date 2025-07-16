@@ -1,16 +1,14 @@
-// src/commands/index.ts
+// src/commands/index.ts - Archivo principal de comandos
 import * as vscode from 'vscode';
 import { CoreExtensionContext } from '../context/ExtensionContext';
-import { registerOllamaCommands } from './OllamaCommands';
-import { registerGiteaCommands } from './GiteaCommands';
+import { registerAnalysisCommands } from './AnalysisCommands';
+import { registerGenerationCommands } from './GenerationCommands';
+import { registerProjectCommands } from './ProjectCommands';
+import { registerConfigurationCommands } from '././ConfigurationCommands';
 
-/**
- * Registra todos los comandos de la extensión.
- * @param coreCtx El contexto central de la extensión.
- * @param vsCodeCtx El contexto de la extensión de VS Code.
- * @param status Contexto de la barra de estado
- */
-export function registerAllCommands(coreCtx: CoreExtensionContext, vsCodeCtx: vscode.ExtensionContext,status:vscode.StatusBarItem ) {
-    registerOllamaCommands(coreCtx, vsCodeCtx);
-    registerGiteaCommands(vsCodeCtx,coreCtx,status);
+export function registerAllCommands(coreCtx: CoreExtensionContext, vsCodeCtx: vscode.ExtensionContext) {
+    registerAnalysisCommands(coreCtx, vsCodeCtx);
+    registerGenerationCommands(coreCtx, vsCodeCtx);
+    registerProjectCommands(coreCtx, vsCodeCtx);
+    registerConfigurationCommands(coreCtx, vsCodeCtx);
 }

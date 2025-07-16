@@ -31,14 +31,18 @@ export class PromptingService {
     }
 
     private buildPrompt(templateKey: keyof typeof this.promptTemplates, replacements: Record<string, any>): string {
-        const template = this.promptTemplates[templateKey];
+     
+         const outputLanguage = vscode.workspace.getConfiguration('ollamaCodeAnalyzer').get<string>('outputLanguage', 'Español');
+
+         const template = this.promptTemplates[templateKey];
         
-        // [CORRECCIÓN] Añadir salvaguarda contra prompts no cargados
         if (!template || !template.instructions) {
-            throw new Error(`La plantilla de prompt para "${String(templateKey)}" no se encontró o está corrupta. Revisa prompts-base.json.`);
+            throw new Error(`La plantilla de prompt para "${String(templateKey)}" no se encontró o está corrupta.`);
         }
 
         let prompt = `${template.role}\n\n`;
+        // [NUEVO] Añadir la instrucción de idioma al principio de las instrucciones
+        prompt += `IMPORTANT: Your entire response must be in ${outputLanguage}.\n\n`;
         prompt += `${template.instructions.join('\n')}\n\n`;
 
         if (template.output_format) {
