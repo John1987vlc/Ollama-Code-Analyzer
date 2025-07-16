@@ -5,7 +5,6 @@ import { CoreExtensionContext } from '../context/ExtensionContext';
 import { runAnalysis } from '../commands/OllamaCommands'; // La importación ahora funciona
 import { debounce } from '../utils/debounce';
 import { getRelativeFilePath } from '../utils/pathUtils';
-import { updateGiteaStatusBar } from '../ui/statusBar';
 
 /**
  * Registra todos los listeners de eventos de VS Code para la extensión.
@@ -13,10 +12,8 @@ import { updateGiteaStatusBar } from '../ui/statusBar';
 export function registerEventListeners(
     context: vscode.ExtensionContext, 
     coreCtx: CoreExtensionContext,
-    giteaStatusBarItem: vscode.StatusBarItem 
+  
 ) {
-    const { gitContextProvider, giteaService } = coreCtx;
-
     /**
      * Función central para manejar un análisis, respetando la configuración del usuario.
      */
@@ -43,14 +40,10 @@ export function registerEventListeners(
             if(relativePath === null) {
                 relativePath = "./";
             }
-            gitContextProvider.refresh(relativePath);
-            await updateGiteaStatusBar(giteaService, giteaStatusBarItem);
-            
+           
             // Opcionalmente, analizar el archivo cuando se enfoca.
             handleAnalysis(editor.document, 'analyzeOnOpen');
-        } else {
-            gitContextProvider.refresh(undefined);
-        }
+        } 
     });
 
     // --- LISTENER: Al abrir un nuevo documento ---

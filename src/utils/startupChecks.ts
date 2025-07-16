@@ -2,8 +2,6 @@
 
 import * as vscode from 'vscode';
 import { OllamaService } from '../api/OllamaService';
-import { GiteaService } from '../api/GiteaService';
-import { updateGiteaStatusBar } from '../ui/statusBar';
 
 /**
  * Realiza comprobaciones al iniciar la extensión para asegurar que los servicios
@@ -11,8 +9,6 @@ import { updateGiteaStatusBar } from '../ui/statusBar';
  */
 export async function checkServicesAvailability(
     ollamaService: OllamaService, 
-    giteaService: GiteaService,
-    giteaStatusBarItem: vscode.StatusBarItem // Necesita la barra para actualizarla
 ): Promise<void> {
     
     // Verificar Ollama
@@ -30,24 +26,10 @@ export async function checkServicesAvailability(
         }
     }
 
-    // Verificar Gitea
-    const giteaConfigured = await giteaService.isConfigured();
-    if (!giteaConfigured) {
-        const selection = await vscode.window.showInformationMessage(
-            'Gitea no está configurado. El análisis contextual está desactivado.',
-            'Configurar Ahora'
-        );
-        if (selection === 'Configurar Ahora') {
-            vscode.commands.executeCommand('ollamaCodeAnalyzer.configureGitea');
-        }
-    }
-
-    // Actualizar la barra de estado después de las comprobaciones
-    await updateGiteaStatusBar(giteaService, giteaStatusBarItem);
 
     // Mensaje de éxito si todo está bien
-    if (ollamaAvailable && giteaConfigured) {
+    if (ollamaAvailable) {
         const models = await ollamaService.getModels();
-        vscode.window.showInformationMessage(`✅ Ollama y Gitea están listos! ${models.length} modelos cargados.`);
+        vscode.window.showInformationMessage(`✅ Ollama está listo! ${models.length} modelos cargados.`);
     }
 }
