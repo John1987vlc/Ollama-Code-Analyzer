@@ -1,0 +1,18 @@
+{
+  "extension.displayName": "Ollama Code Analyzer",
+  "extension.description": "Analyze your code in real time using local AI models with Ollama",
+  "command.analyzeCurrentDocument.title": "Analyze Current Document",
+  "command.configureModel.title": "Configure Model",
+  "command.generateCodeFromComment.title": "Generate code from comment (///, #, /*...*/)",
+  "command.findSuggestions.title": "Find refactoring suggestions",
+  "command.conceptualRefactor.title": "Propose intelligent refactoring",
+  "command.explainCode.title": "Explain selected code",
+  "command.checkCompanyStandards.title": "Validate company standards",
+  "command.generateUnitTest.title": "Generate unit test",
+  "command.findDuplicateLogic.title": "Detect duplicate logic",
+  "command.generateUmlDiagram.title": "Generate project UML Diagram",
+  "command.configureLanguage.title": "Configure Output Language",
+  "command.checkProjectStandards.title": "Validate project standards",
+  "config.outputLanguage.description": "Language for the AI's responses (comments, explanations, etc.).",
+  "config.baseUrl.description": "Base URL of the Ollama service"
+}

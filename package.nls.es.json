@@ -1,0 +1,18 @@
+{
+  "extension.displayName": "Analizador de Código Ollama",
+  "extension.description": "Analiza tu código en tiempo real usando modelos de IA locales con Ollama",
+  "command.analyzeCurrentDocument.title": "Analizar Documento Actual",
+  "command.configureModel.title": "Configurar Modelo",
+  "command.generateCodeFromComment.title": "Generar código desde comentario (///, #, /*...*/)",
+  "command.findSuggestions.title": "Buscar sugerencias de refactorización",
+  "command.conceptualRefactor.title": "Proponer refactorización inteligente",
+  "command.explainCode.title": "Explicar código seleccionado",
+  "command.checkCompanyStandards.title": "Validar estándares de empresa",
+  "command.generateUnitTest.title": "Generar prueba unitaria",
+  "command.findDuplicateLogic.title": "Detectar lógica duplicada",
+  "command.generateUmlDiagram.title": "Generar Diagrama UML del proyecto",
+  "command.configureLanguage.title": "Configurar Idioma de Salida",
+  "command.checkProjectStandards.title": "Validar estándares del proyecto",
+  "config.outputLanguage.description": "Idioma para las respuestas de la IA (comentarios, explicaciones, etc.).",
+  "config.baseUrl.description": "URL base del servicio Ollama"
+}

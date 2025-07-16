@@ -30,7 +30,7 @@
     "onLanguage:sql"
   ],
   "main": "./out/extension.js",
-   "contributes": {
+  "contributes": {
     "commands": [
       {
         "command": "ollamaCodeAnalyzer.analyzeCurrentDocument",
@@ -132,11 +132,11 @@
           "group": "2_file@2"
         },
         {
-          "command": "ollamaCodeAnalyzer.findDuplicateLogic",
+          "command": "ollamaCodeAnalyzer.findSuggestions",
           "group": "2_file@3"
         },
         {
-          "command": "ollamaCodeAnalyzer.findSuggestions",
+          "command": "ollamaCodeAnalyzer.findDuplicateLogic",
           "group": "2_file@4"
         },
         {
@@ -148,32 +148,36 @@
           "group": "3_project@1"
         },
         {
-            "command": "ollamaCodeAnalyzer.checkProjectStandards",
-            "group": "3_project@2"
+          "command": "ollamaCodeAnalyzer.checkProjectStandards",
+          "group": "3_project@2"
         }
       ]
     },
     "configuration": {
       "title": "Ollama Code Analyzer",
       "properties": {
-        "ollamaCodeAnalyzer.outputLanguage": {
-            "type": "string",
-            "default": "Español",
-            "enum": ["Español", "English"],
-            "description": "%config.outputLanguage.description%"
-        },
         "ollamaCodeAnalyzer.baseUrl": {
           "type": "string",
           "default": "http://localhost:11434",
           "description": "%config.baseUrl.description%"
+        },
+        "ollamaCodeAnalyzer.outputLanguage": {
+          "type": "string",
+          "default": "Español",
+          "enum": [
+            "Español",
+            "English"
+          ],
+          "description": "%config.outputLanguage.description%"
         }
       }
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "build": "tsc && cpx \"src/prompts/**/*.json\" out/prompts",
-    "compile": "tsc -p ./ && cpx \"src/media/*\" out/media",
+    "vscode:prepublish": "npm run build",
+    "generate-nls": "node ./scripts/generate-nls.js", 
+    "build": "npm run generate-nls && tsc -p ./ && cpx \"src/prompts/**/*.json\" out/prompts && cpx \"src/media/*\" out/media",
+    "compile": "npm run generate-nls && tsc -p ./",
     "watch": "npm-run-all -p watch:*",
     "watch:tsc": "tsc -watch -p ./",
     "watch:media": "cpx \"src/media/*\" out/media --watch",

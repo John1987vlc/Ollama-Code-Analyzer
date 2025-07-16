@@ -1,10 +1,14 @@
+/**
+ * @file Registra los comandos que operan a nivel de proyecto.
+ * Incluye funcionalidades como la generación de diagramas UML para todo el
+ * proyecto y la validación de estándares en múltiples archivos.
+ */
 // src/commands/ProjectCommands.ts - Comandos de proyecto
 import * as vscode from 'vscode';
 import { CoreExtensionContext } from '../context/ExtensionContext';
 import { UnifiedResponseWebview } from '../ui/webviews';
 import { I18n } from '../internationalization/i18n';
-import { getExcludePattern } from '../utils/ignoreUtils';
-import { getExtensionsForLanguage, findProjectFiles } from './utils/ProjectUtils';
+import {  findProjectFiles } from './utils/ProjectUtils';
 
 export function registerProjectCommands(coreCtx: CoreExtensionContext, vsCodeCtx: vscode.ExtensionContext) {
     const generateUmlDiagramCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.generateUmlDiagram', async () => {

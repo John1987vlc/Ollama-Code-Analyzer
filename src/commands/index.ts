@@ -1,3 +1,8 @@
+/**
+ * @file Punto de entrada para el registro de todos los comandos de la extensión.
+ * Importa y ejecuta las funciones de registro de los diferentes módulos de comandos
+ * para mantener el código organizado.
+ */
 // src/commands/index.ts - Archivo principal de comandos
 import * as vscode from 'vscode';
 import { CoreExtensionContext } from '../context/ExtensionContext';
