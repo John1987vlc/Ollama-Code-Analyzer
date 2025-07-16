@@ -290,32 +290,55 @@ export function registerOllamaCommands(coreCtx: CoreExtensionContext, vsCodeCtx:
     const model = vscode.workspace.getConfiguration('ollamaCodeAnalyzer').get<string>('model')!;
 
     // FASE 1: EXTRACCIÓN
+    let extractedComponents: any[] = [];
     for (const file of files) {
         const structure = await coreCtx.ollamaService.extractUmlStructureFromFile(file, model);
-        let componentsFound = "No se encontraron componentes.";
+        let componentsFound = "Analizando...";
         if (structure && structure.components && structure.components.length > 0) {
-            projectStructure.push(...structure.components);
+            extractedComponents.push(...structure.components);
             componentsFound = structure.components.map((c: any) => `${c.name} (${c.type})`).join(', ');
+        } else {
+            componentsFound = "No se encontraron componentes estructurales.";
         }
         UnifiedResponseWebview.currentPanel?.showUmlGenerationProgress(file.path, componentsFound);
     }
     
-    // FASE 2: SÍNTESIS
-    if (projectStructure.length > 0) {
-    const finalUmlContent = await coreCtx.ollamaService.synthesizeUmlDiagram(projectStructure, model);
-    if (finalUmlContent && UnifiedResponseWebview.currentPanel) {
-        const finalResponse = `A continuación se muestra el diagrama UML generado a partir de los archivos del proyecto.\n\n\`\`\`plantuml\n@startuml\n${finalUmlContent}\n@enduml\n\`\`\``;
-        // [MODIFICADO] Pasamos `projectStructure` como segundo argumento para depuración.
-        UnifiedResponseWebview.currentPanel.showResponse(finalResponse, projectStructure);
-    } else {
-         UnifiedResponseWebview.currentPanel?.showResponse("El modelo no pudo generar el diagrama final a partir de la estructura extraída.", projectStructure);
+    // [MEJORADO] Unificar y filtrar rigurosamente los componentes.
+    const componentMap = new Map<string, any>();
+    for (const component of extractedComponents) {
+        // Ignorar placeholders y componentes sin un tipo válido.
+        const isValidType = ['class', 'interface', 'enum'].includes(component.type);
+        if (!component.name || component.name === 'ComponentName' || !isValidType) {
+            continue;
+        }
+
+        if (componentMap.has(component.name)) {
+            const existing = componentMap.get(component.name);
+            if (component.relationships) {
+                existing.relationships = [...(existing.relationships || []), ...component.relationships];
+                existing.relationships = existing.relationships.filter((rel: any, index: number, self: any[]) =>
+                    index === self.findIndex((r: any) => r.target === rel.target && r.type === rel.type)
+                );
+            }
+        } else {
+            componentMap.set(component.name, { ...component });
+        }
     }
-} else {
-    UnifiedResponseWebview.currentPanel?.showResponse("No se pudo extraer ninguna estructura de los archivos del proyecto para generar un diagrama.");
-}
+    const finalProjectStructure = Array.from(componentMap.values());
+
+    // FASE 2: SÍNTESIS
+    if (finalProjectStructure.length > 0) {
+        const finalUmlContent = await coreCtx.ollamaService.synthesizeUmlDiagram(finalProjectStructure, model);
+        if (finalUmlContent && UnifiedResponseWebview.currentPanel) {
+            const finalResponse = `A continuación se muestra el diagrama UML generado a partir de la estructura del proyecto.\n\n\`\`\`plantuml\n${finalUmlContent}\n\`\`\``;
+            UnifiedResponseWebview.currentPanel.showResponse(finalResponse, finalProjectStructure);
+        } else {
+             UnifiedResponseWebview.currentPanel?.showResponse("El modelo no pudo generar el diagrama final a partir de la estructura extraída.", finalProjectStructure);
+        }
+    } else {
+        UnifiedResponseWebview.currentPanel?.showResponse("No se pudo extraer ninguna estructura válida y relevante de los archivos del proyecto para generar un diagrama.");
+    }
 });
-
-
 
     vsCodeCtx.subscriptions.push(
         analyzeDocumentCommand,
