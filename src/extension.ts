@@ -1,7 +1,7 @@
 // src/extension.ts
 import * as vscode from 'vscode';
 import { CoreExtensionContext } from './context/ExtensionContext';
-import { registerAllCommands } from './commands/index';
+import { registerAllCommands } from './commands';
 import { registerEventListeners } from './events/listeners';
 import { checkServicesAvailability } from './utils/startupChecks';
 import { updateGiteaStatusBar } from './ui/statusBar';

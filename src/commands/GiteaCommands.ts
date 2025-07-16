@@ -102,9 +102,6 @@ export function registerGiteaCommands(
   }
 });
 
-
-  // [ELIMINADO] El comando 'analyzeWithGiteaContext' ya no es necesario.
-
   context.subscriptions.push(
     configureGitea,
     checkGiteaStatus,

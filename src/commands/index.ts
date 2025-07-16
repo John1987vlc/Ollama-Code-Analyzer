@@ -4,7 +4,7 @@ import { CoreExtensionContext } from '../context/ExtensionContext';
 import { registerAnalysisCommands } from './AnalysisCommands';
 import { registerGenerationCommands } from './GenerationCommands';
 import { registerProjectCommands } from './ProjectCommands';
-import { registerConfigurationCommands } from '././ConfigurationCommands';
+import { registerConfigurationCommands } from './ConfigurationCommands';
 
 export function registerAllCommands(coreCtx: CoreExtensionContext, vsCodeCtx: vscode.ExtensionContext) {
     registerAnalysisCommands(coreCtx, vsCodeCtx);
