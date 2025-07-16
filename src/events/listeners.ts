@@ -6,7 +6,7 @@
 // src/events/listeners.ts
 import * as vscode from 'vscode';
 import { CoreExtensionContext } from '../context/ExtensionContext';
-import { runAnalysis } from '../commands/OllamaCommands'; // La importación ahora funciona
+import { runAnalysis } from '../commands/AnalysisCommands'; // La importación ahora funciona
 import { debounce } from '../utils/debounce';
 import { getRelativeFilePath } from '../utils/pathUtils';
 
