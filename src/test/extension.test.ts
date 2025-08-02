@@ -9,17 +9,11 @@ suite('Ollama Code Analyzer Extension Test Suite', () => {
     let coreCtx: CoreExtensionContext;
 
     // --- HOOK: Se ejecuta una vez antes de todas las pruebas ---
-    suiteSetup(async () => {
+    suiteSetup(async function() {
+        this.timeout(10000); // Aumentar el timeout a 10 segundos
         // Espera a que la extensión se active
         extension = vscode.extensions.getExtension('ollama-code-analyzer-Gemma3n-Gitea.ollama-code-analyzer')!;
         await extension.activate();
-        
-        // Obtener el contexto de la extensión (esto es una simulación,
-        // en una extensión real podrías necesitar exponer tu contexto)
-        // Por ahora, asumimos que podemos acceder a los servicios.
-        // NOTA: Para que esto funcione de verdad, se necesitaría una refactorización
-        // para que el 'coreContext' sea exportado desde 'extension.ts' o accesible de alguna manera.
-        // Como no podemos modificar 'extension.ts', probaremos los comandos directamente.
     });
 
     // --- TEST 1: La extensión se activa correctamente ---

@@ -6,38 +6,52 @@
      * Función principal que se ejecuta al cargar el script.
      */
     function initialize() {
+        log("Initializing webview script...");
         // 1. Mejora visualmente la lista de issues coloreando la severidad.
         formatDetectedIssues();
 
         // 2. Añade la funcionalidad a los botones de "Copiar".
         addCopyButtonListeners();
+        log("Webview script initialized.");
     }
 
     /**
      * Busca en el cuerpo del markdown las etiquetas de severidad y les aplica una clase CSS.
      */
     function formatDetectedIssues() {
-        const listItems = document.querySelectorAll('.markdown-body ul li');
-        if (listItems.length === 0) return;
+        log("Formatting detected issues...");
+        const markdownBody = document.querySelector('.markdown-body');
+        if (!markdownBody) {
+            log("Markdown body not found.");
+            return;
+        }
+        log("Markdown body found.");
 
-        const severityRegex = /(Severity:)\s*(Error|Warning|Hint|Information)/gi;
+        // Expresión regular para encontrar "Severity: Error", "Severidad: Warning", etc., sin ser sensible a mayúsculas.
+        const severityRegex = /(Severity|Severidad):\s*(Error|Warning|Hint|Information|Info)/gi;
 
-        listItems.forEach(item => {
-            // Reemplazamos el texto con HTML que contiene un <span> estilizado
-            item.innerHTML = item.innerHTML.replace(
-                severityRegex,
-                `$1 <span class="severity-label severity-${'$2'.toLowerCase()}">$2</span>`
-            );
-        });
+        // Reemplazamos el texto en todo el cuerpo del markdown.
+        markdownBody.innerHTML = markdownBody.innerHTML.replace(
+            severityRegex,
+            (match, p1, p2) => {
+                const severityKey = p2.toLowerCase();
+                log(`Found severity: ${p2}`);
+                return `${p1}: <span class="severity-label severity-${severityKey}">${p2}</span>`;
+            }
+        );
+        log("Detected issues formatted.");
     }
+
 
     /**
      * Asigna los listeners de eventos para todos los botones de copiar.
      */
     function addCopyButtonListeners() {
+        log("Adding copy button listeners...");
         document.addEventListener('click', event => {
             const button = event.target.closest('.copy-btn');
             if (!button) return;
+            log("Copy button clicked.");
 
             const codeContainer = button.closest('.details-content');
             if (codeContainer) {
@@ -56,6 +70,7 @@
                 }
             }
         });
+        log("Copy button listeners added.");
     }
 
     // Ejecutamos el script de inicialización

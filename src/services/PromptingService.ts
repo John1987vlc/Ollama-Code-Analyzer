@@ -65,7 +65,7 @@ export class PromptingService {
         
         // Añadir el código o la instrucción del usuario al final
         if(replacements.code) {
-            prompt += `--- \nCode to Analyze (${replacements.language}):\n\`\`\`${replacements.language}\n${replacements.code}\n\`\`\``
+            prompt += `--- \nCode to Analyze (${replacements.language}):\n\`\`\`${replacements.language}\n${replacements.code}\n\`\`\``;
         } else if (replacements.files) {
             // Manejar múltiples archivos para el diagrama UML
             prompt += `--- \nProject Files to Analyze:\n\n`;
@@ -75,7 +75,7 @@ export class PromptingService {
         }
 
         if(replacements.instruction) {
-             prompt += `--- \nUSER INSTRUCTION:\n"${replacements.instruction}"\n---\n\nCODE SNIPPET (${replacements.language}):`
+             prompt += `--- \nUSER INSTRUCTION:\n"${replacements.instruction}"\n---\n\nCODE SNIPPET (${replacements.language}):`;
         }
 
 

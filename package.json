@@ -206,6 +206,11 @@
           "type": "boolean",
           "default": false,
           "description": "Analizar un fichero automáticamente mientras escribes."
+        },
+        "ollamaCodeAnalyzer.timeout": {
+          "type": "number",
+          "default": 45000,
+          "description": "Tiempo máximo de espera (en ms) para las respuestas de Ollama."
         }
       }
     }
@@ -213,14 +218,14 @@
   "scripts": {
     "vscode:prepublish": "npm run build",
     "generate-nls": "node ./scripts/generate-nls.js",
-    "build": "npm run generate-nls && tsc -p ./ && cpx \"src/prompts/**/*.json\" out/prompts && cpx \"src/media/*\" out/media && cpx \"src/internationalization/**/*.json\" out/internationalization", 
+    "build": "npm run generate-nls && tsc -p ./ && cpx \"src/prompts/**/*.json\" out/prompts && cpx \"src/ui/media/*\" out/media && cpx \"src/internationalization/**/*.json\" out/internationalization",
     "compile": "npm run generate-nls && tsc -p ./",
     "watch": "npm-run-all -p watch:*",
     "watch:tsc": "tsc -watch -p ./",
     "watch:media": "cpx \"src/media/*\" out/media --watch",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
-    "test": "mocha -r ts-node/register ./out/test/*.test.js",
+    "test": "vscode-test",
     "package:clean": "npm run build && vsce package"
   },
   "devDependencies": {
@@ -231,6 +236,7 @@
     "@types/vscode": "^1.74.0",
     "@typescript-eslint/eslint-plugin": "^5.45.0",
     "@typescript-eslint/parser": "^5.45.0",
+    "@vscode/test-electron": "^2.5.2",
     "cpx": "^1.5.0",
     "eslint": "^8.57.0",
     "mocha": "^11.7.1",

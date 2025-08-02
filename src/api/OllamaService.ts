@@ -63,7 +63,7 @@ export class OllamaService {
 
   private extractJsonArray(text: string): any[] | null {
     const match = text.match(/```json\s*(\[[\s\S]*?\])\s*```/);
-    if (!match) return null;
+    if (!match) {return null;}
     try {
       return JSON.parse(match[1]);
     } catch {
@@ -73,7 +73,7 @@ export class OllamaService {
 
   private extractJsonObject(text: string): any | null {
     const match = text.match(/```json\s*(\{[\s\S]*?\})\s*```/);
-    if (!match) return null;
+    if (!match) {return null;}
     try {
       return JSON.parse(match[1]);
     } catch {
@@ -123,7 +123,7 @@ export class OllamaService {
         stream: false
       });
       
-      if (!response?.response) return null;
+      if (!response?.response) {return null;}
       
       let code = response.response.trim();
       return code.replace(/^```[\w]*\n|```$/gm, '').trim();
@@ -140,7 +140,7 @@ export class OllamaService {
           const prompt = await this.promptingService.getConceptualRefactorPrompt(code, language);
           const response = await this.generate(prompt, model, { temperature: 0.3, stream: false });
 
-          if (!response?.response) return null;
+          if (!response?.response) {return null;}
           
           const result = this.extractJsonObject(response.response);
           if (result && result.intent && result.explanation && result.suggestion) {
@@ -160,7 +160,7 @@ export class OllamaService {
           const prompt = await this.promptingService.getRefactorPrompt(code, language);
           const response = await this.generate(prompt, model, { temperature: 0.3, stream: false });
 
-          if (!response?.response) return null;
+          if (!response?.response) {return null;}
 
           const suggestions = this.extractJsonArray(response.response);
           return suggestions || null;
@@ -206,7 +206,7 @@ export class OllamaService {
         const prompt = await this.promptingService.getUmlExtractPrompt(file, await languageId);
         const response = await this.generate(prompt, model, { temperature: 0.0 });
 
-        if (!response?.response) return null;
+        if (!response?.response) {return null;}
 
         const jsonMatch = response.response.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
@@ -228,7 +228,7 @@ public async synthesizeUmlDiagram(projectStructure: any[], model: string): Promi
         const prompt = await this.promptingService.getUmlSynthesizePrompt(projectStructure);
         const response = await this.generate(prompt, model, { temperature: 0.1 });
 
-        if (!response?.response) return null;
+        if (!response?.response) {return null;}
 
         // Extraer solo el bloque de PlantUML
         const umlMatch = response.response.match(/```plantuml\s*([\s\S]*?)```/);

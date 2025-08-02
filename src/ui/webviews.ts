@@ -7,6 +7,7 @@ const kroki = require('@kazumatu981/markdown-it-kroki');
 import { parseResponse } from '../utils/webviewUtils';
 import { getWebviewHtml } from './webviewsContent';
 import { ParsedWebviewContent, UmlProgressState } from './webviewsTypes';
+import { Logger } from '../utils/logger';
 
 
 export class UnifiedResponseWebview {
@@ -37,7 +38,7 @@ export class UnifiedResponseWebview {
             column || vscode.ViewColumn.One,
             {
                 enableScripts: true,
-                localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'media')]
+                localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'src', 'ui', 'media')]
             }
         );
 
@@ -55,9 +56,14 @@ export class UnifiedResponseWebview {
 
         this._panel.webview.onDidReceiveMessage(
             message => {
-                if (message.command === 'copyCode') {
-                    vscode.env.clipboard.writeText(message.text);
-                    vscode.window.showInformationMessage('¡Código copiado al portapapeles!');
+                switch (message.command) {
+                    case 'copyCode':
+                        vscode.env.clipboard.writeText(message.text);
+                        vscode.window.showInformationMessage('¡Código copiado al portapapeles!');
+                        break;
+                    case 'log':
+                        Logger.log(`Webview: ${message.message}`);
+                        break;
                 }
             },
             null,

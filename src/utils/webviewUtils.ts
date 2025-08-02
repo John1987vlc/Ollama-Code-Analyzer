@@ -18,7 +18,7 @@ export function getNonce(): string {
  * Escapa caracteres HTML para prevenir XSS.
  */
 export function escape(htmlStr: string): string {
-    if (typeof htmlStr !== 'string') return '';
+    if (typeof htmlStr !== 'string') {return '';}
     return htmlStr.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 

@@ -23,7 +23,7 @@ export function registerEventListeners(
      */
     const handleAnalysis = (document: vscode.TextDocument, configKey: 'autoAnalyze' | 'analyzeOnOpen' | 'analyzeOnSave') => {
         const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer');
-        if (!config.get<boolean>(configKey, false)) return;
+        if (!config.get<boolean>(configKey, false)) {return;}
 
         const supportedLanguages = config.get<string[]>('supportedLanguages', []);
         if (supportedLanguages.includes(document.languageId) && !document.isUntitled) {

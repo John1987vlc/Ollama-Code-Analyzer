@@ -70,7 +70,7 @@ export function registerAnalysisCommands(coreCtx: CoreExtensionContext, vsCodeCt
 
     const findSuggestionsCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.findSuggestions', () => {
         const editor = vscode.window.activeTextEditor;
-        if (!editor) return;
+        if (!editor) {return;}
         executeCommandWithWebview(vsCodeCtx, 'command.findSuggestions.title', async () => { // <-- CAMBIO: Clave de i18n
             const prompt = await coreCtx.promptingService.getRefactorPrompt(editor.document.getText(), editor.document.languageId);
             const response = await coreCtx.ollamaService.generate(prompt, vscode.workspace.getConfiguration('ollamaCodeAnalyzer').get<string>('model')!);

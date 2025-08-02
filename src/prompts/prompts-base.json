@@ -125,8 +125,7 @@
     "   - 'attribute': 'Target <-- Source : has'",
     "3. If a component is referenced as a relationship target but was not declared in any component list, STILL declare it with its name and an appropriate type (default to 'class' if unknown).",
     "4. Do NOT include methods or attributes, only class/interface/enum names and relationships.",
-    "5. Begin with '@startuml' and end with '@enduml'. Do NOT include any other text or markdown formatting.",
-    "6. Each component must be declared once. Handle duplicated names (like 'UserDefinedClass') by appending a unique suffix (e.g., 'UserDefinedClass_1', 'UserDefinedClass_2') if they come from different files."
+    "5. Begin with '@startuml' and end with '@enduml'. Do NOT include any other text or markdown formatting."
   ]
 }
 }

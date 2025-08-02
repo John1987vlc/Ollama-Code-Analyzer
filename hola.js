@@ -2,7 +2,8 @@
 function Sumar(a, b) {
 
     let suma = a + b;
-    return suma;
+    return sum
+    a;
 }
 
 var x = 10;
