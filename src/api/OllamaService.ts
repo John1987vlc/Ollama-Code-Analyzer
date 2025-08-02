@@ -8,6 +8,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { PromptingService } from '../services/PromptingService';
+import { Logger } from '../utils/logger'; 
 
 // ... (interfaces sin cambios) ...
 interface GenerateOptions {
@@ -240,16 +241,17 @@ public async synthesizeUmlDiagram(projectStructure: any[], model: string): Promi
     }
 }
 
-public async generate(
+ public async generate(
       prompt: string, 
       model: string, 
       options: any = {}
   ): Promise<{ response: string; prompt: string; } | null> {
       const { temperature = 0.5, maxTokens = 2048, stream = false } = options;
-      console.log(`[OllamaService] Enviando petición a Ollama...`);
+      Logger.log(`Enviando petición a Ollama...`, { baseUrl: this.baseUrl, model });
 
       try {
           const response = await fetch(`${this.baseUrl}/api/generate`, {
+              // ... (resto de la configuración de fetch)
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               signal: AbortSignal.timeout(this.timeoutMs),
@@ -266,17 +268,20 @@ public async generate(
           });
 
           if (!response.ok) {
+              const errorBody = await response.text();
+              Logger.error(`Error en la petición a Ollama: ${response.statusText}`, { status: response.status, body: errorBody });
               throw new Error(`Error en la petición: ${response.statusText}`);
           }
 
           const data = await response.json();
-          console.log("[OllamaService] Respuesta recibida de Ollama:", data);
+          Logger.log("Respuesta recibida de Ollama:", data);
           
           return {
               response: data.response || '',
-              prompt: prompt // Devolvemos el prompt para mostrarlo en el "thinking"
+              prompt: prompt
           };
       } catch (error) {
+          Logger.error('Fallo la llamada a la API de Ollama.', error);
           if (error instanceof Error && error.name === 'AbortError') {
               vscode.window.showErrorMessage('Tiempo de espera agotado en la generación de texto.');
           } else {

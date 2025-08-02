@@ -1,6 +1,6 @@
 // src/utils/webviewUtils.ts
 
-import { ParsedWebviewContent } from '../ui/webviewstypes';
+import { ParsedWebviewContent } from '../ui/webviewsTypes';
 
 /**
  * Genera una cadena aleatoria para usar en la Política de Seguridad de Contenido (CSP).

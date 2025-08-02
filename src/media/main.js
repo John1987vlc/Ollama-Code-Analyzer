@@ -1,6 +1,7 @@
 // media/main.js
 (function() {
     const vscode = acquireVsCodeApi();
+    
 // Función para copiar el texto del bloque de pensamiento
     function copyThinking() {
         const thinkingText = document.querySelector('.thinking-code code').textContent;

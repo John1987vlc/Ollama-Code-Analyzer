@@ -1,8 +1,8 @@
-// src/ui/webviewContent.ts
+// src/ui/webviewsContent.ts
 
 import * as vscode from 'vscode';
 import { getNonce, escape } from '../utils/webviewUtils';
-import { ParsedWebviewContent, UmlProgressState } from './webviewstypes';
+import { ParsedWebviewContent, UmlProgressState } from './webviewsTypes';
 
 export function getWebviewHtml(
     panel: vscode.WebviewPanel,
@@ -24,7 +24,7 @@ export function getWebviewHtml(
     const { thinking, markdownContent } = data;
     let bodyContent: string;
 
-    // La lógica para generar el `bodyContent` se mantiene exactamente igual que antes...
+    // ... (El resto de la lógica para bodyContent se mantiene igual) ...
     if (isLoading) {
         if (isUmlGeneration) {
             const processedFilesHtml = umlProgressState.processedFiles.map(file => `
@@ -82,7 +82,7 @@ export function getWebviewHtml(
             </div>`;
     }
 
-/// HTML FINAL
+    /// HTML FINAL
     return `<!DOCTYPE html>
         <html lang="es">
         <head>
@@ -91,7 +91,10 @@ export function getWebviewHtml(
             <meta http-equiv="Content-Security-Policy" content="
                 default-src 'none';
                 style-src ${panel.webview.cspSource};
-                script-src 'nonce-${nonce}' ${panel.webview.cspSource};
+                
+                // --- CORRECCIÓN AQUÍ ---
+                script-src 'nonce-${nonce}' ${panel.webview.cspSource} https://unpkg.com; 
+
                 img-src ${panel.webview.cspSource} https://kroki.io data:;
                 connect-src https://assets3.lottiefiles.com;
             ">

@@ -1,8 +1,5 @@
-/**
- * @file Gestiona la internacionalización (i18n) de la extensión.
- * Carga los ficheros de traducción (locales) y proporciona una función `t`
- * para obtener los textos en el idioma configurado por el usuario.
- */
+// src/internationalization/i18n.ts
+
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -15,7 +12,10 @@ export class I18n {
     private currentLocale: string = 'en';
 
     private constructor(context: vscode.ExtensionContext) {
-        const localesPath = path.join(context.extensionPath, 'src', 'internationalization', 'locales.json');
+        // --- CORRECCIÓN AQUÍ ---
+        // Usamos __dirname para construir la ruta desde la ubicación del archivo compilado (en 'out')
+        const localesPath = path.resolve(__dirname, '..', 'internationalization', 'locales.json');
+        
         try {
             const fileContent = fs.readFileSync(localesPath, 'utf-8');
             this.translations = JSON.parse(fileContent);
@@ -28,9 +28,11 @@ export class I18n {
             });
         } catch (error) {
             console.error("Failed to load translation files:", error);
+            vscode.window.showErrorMessage('Error crítico: No se pudieron cargar los ficheros de traducción.');
         }
     }
 
+    // ... (el resto de la clase no cambia) ...
     public static initialize(context: vscode.ExtensionContext): void {
         if (!I18n.instance) {
             I18n.instance = new I18n(context);

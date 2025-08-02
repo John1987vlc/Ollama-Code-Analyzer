@@ -6,7 +6,7 @@ const kroki = require('@kazumatu981/markdown-it-kroki');
 
 import { parseResponse } from '../utils/webviewUtils';
 import { getWebviewHtml } from './webviewsContent';
-import { ParsedWebviewContent, UmlProgressState } from './webviewstypes';
+import { ParsedWebviewContent, UmlProgressState } from './webviewsTypes';
 
 export class UnifiedResponseWebview {
     public static currentPanel: UnifiedResponseWebview | undefined;
