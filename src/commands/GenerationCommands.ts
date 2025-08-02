@@ -29,7 +29,7 @@ export function registerGenerationCommands(coreCtx: CoreExtensionContext, vsCode
             return;
         }
 
-        executeCommandWithWebview(vsCodeCtx, I18n.t('command.generateCode.title'), async () => {
+        executeCommandWithWebview(vsCodeCtx, 'command.generateCodeFromComment.title', async () => { // <-- CAMBIO: Clave de i18n
             const languageId = editor.document.languageId;
             const model = vscode.workspace.getConfiguration('ollamaCodeAnalyzer').get<string>('model')!;
 
@@ -46,7 +46,7 @@ export function registerGenerationCommands(coreCtx: CoreExtensionContext, vsCode
             vscode.window.showInformationMessage(I18n.t('command.generateUnitTest.noSelection'));
             return;
         }
-        executeCommandWithWebview(vsCodeCtx, I18n.t('command.generateUnitTest.title'), async () => {
+        executeCommandWithWebview(vsCodeCtx, 'command.generateUnitTest.title', async () => { // <-- CAMBIO: Clave de i18n
             const selectedCode = editor.document.getText(editor.selection);
             const prompt = await coreCtx.promptingService.getUnitTestPrompt(selectedCode, editor.document.languageId);
             const response = await coreCtx.ollamaService.generate(prompt, vscode.workspace.getConfiguration('ollamaCodeAnalyzer').get<string>('model')!);

@@ -15,7 +15,7 @@ export async function runAnalysis(
     coreCtx: CoreExtensionContext,
     vsCodeCtx: vscode.ExtensionContext
 ) {
-    const title = I18n.t('command.analyzeFile.title');
+    const title = I18n.t('command.analyzeCurrentDocument.title'); // <-- CAMBIO: Resolvemos el título aquí
     const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer');
     const model = config.get<string>('model');
 
@@ -66,7 +66,7 @@ export function registerAnalysisCommands(coreCtx: CoreExtensionContext, vsCodeCt
     const findSuggestionsCommand = vscode.commands.registerCommand('ollamaCodeAnalyzer.findSuggestions', () => {
         const editor = vscode.window.activeTextEditor;
         if (!editor) return;
-        executeCommandWithWebview(vsCodeCtx, I18n.t('command.findSuggestions.title'), async () => {
+        executeCommandWithWebview(vsCodeCtx, 'command.findSuggestions.title', async () => { // <-- CAMBIO: Clave de i18n
             const prompt = await coreCtx.promptingService.getRefactorPrompt(editor.document.getText(), editor.document.languageId);
             const response = await coreCtx.ollamaService.generate(prompt, vscode.workspace.getConfiguration('ollamaCodeAnalyzer').get<string>('model')!);
             return { prompt, response: response?.response ?? null };
@@ -79,7 +79,7 @@ export function registerAnalysisCommands(coreCtx: CoreExtensionContext, vsCodeCt
             vscode.window.showInformationMessage(I18n.t('command.conceptualRefactor.noSelection'));
             return;
         }
-        executeCommandWithWebview(vsCodeCtx, I18n.t('command.conceptualRefactor.title'), async () => {
+        executeCommandWithWebview(vsCodeCtx, 'command.conceptualRefactor.title', async () => { // <-- CAMBIO: Clave de i18n
             const selectedCode = editor.document.getText(editor.selection);
             const prompt = await coreCtx.promptingService.getConceptualRefactorPrompt(selectedCode, editor.document.languageId);
             const response = await coreCtx.ollamaService.generate(prompt, vscode.workspace.getConfiguration('ollamaCodeAnalyzer').get<string>('model')!);
@@ -93,7 +93,7 @@ export function registerAnalysisCommands(coreCtx: CoreExtensionContext, vsCodeCt
             vscode.window.showInformationMessage(I18n.t('command.explainCode.noSelection'));
             return;
         }
-        executeCommandWithWebview(vsCodeCtx, I18n.t('command.explainCode.title'), async () => {
+        executeCommandWithWebview(vsCodeCtx, 'command.explainCode.title', async () => { // <-- CAMBIO: Clave de i18n
             const selectedCode = editor.document.getText(editor.selection);
             const prompt = await coreCtx.promptingService.getExplainPrompt(selectedCode, editor.document.languageId);
             const response = await coreCtx.ollamaService.generate(prompt, vscode.workspace.getConfiguration('ollamaCodeAnalyzer').get<string>('model')!);
@@ -107,7 +107,7 @@ export function registerAnalysisCommands(coreCtx: CoreExtensionContext, vsCodeCt
             vscode.window.showInformationMessage(I18n.t('command.checkStandards.noFileOpen'));
             return;
         }
-        executeCommandWithWebview(vsCodeCtx, I18n.t('command.checkStandards.title'), async () => {
+        executeCommandWithWebview(vsCodeCtx, 'command.checkCompanyStandards.title', async () => { // <-- CAMBIO: Clave de i18n
             const code = editor.document.getText();
             const languageId = editor.document.languageId;
             const model = vscode.workspace.getConfiguration('ollamaCodeAnalyzer').get<string>('model')!;
@@ -123,7 +123,7 @@ export function registerAnalysisCommands(coreCtx: CoreExtensionContext, vsCodeCt
             vscode.window.showInformationMessage(I18n.t('command.findDuplicateLogic.noFileOpen'));
             return;
         }
-        executeCommandWithWebview(vsCodeCtx, I18n.t('command.findDuplicateLogic.title'), async () => {
+        executeCommandWithWebview(vsCodeCtx, 'command.findDuplicateLogic.title', async () => { // <-- CAMBIO: Clave de i18n
             const code = editor.document.getText();
             const languageId = editor.document.languageId;
             const model = vscode.workspace.getConfiguration('ollamaCodeAnalyzer').get<string>('model')!;

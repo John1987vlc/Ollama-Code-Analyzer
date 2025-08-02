@@ -10,18 +10,19 @@ import { I18n } from '../../internationalization/i18n';
 
 export async function executeCommandWithWebview(
     vsCodeCtx: vscode.ExtensionContext,
-    loadingTitle: string,
+    loadingTitleKey: string, // <-- CAMBIO: Ahora pasamos la clave de i18n
     serviceCall: () => Promise<{ prompt: string, response: string | null } | null>
 ) {
     const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer');
     const model = config.get<string>('model');
+    const title = I18n.t(loadingTitleKey); // <-- CAMBIO: Resolvemos el título aquí
 
     if (!model) {
         vscode.window.showErrorMessage(I18n.t('error.noModelConfigured'));
         return;
     }
 
-    UnifiedResponseWebview.createOrShow(vsCodeCtx.extensionUri, loadingTitle);
+    UnifiedResponseWebview.createOrShow(vsCodeCtx.extensionUri, title);
 
     try {
         const result = await serviceCall();
