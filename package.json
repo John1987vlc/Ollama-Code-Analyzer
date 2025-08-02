@@ -4,6 +4,7 @@
   "description": "Analiza tu código en tiempo real usando Ollama y modelos de IA locales",
   "publisher": "ollama-code-analyzer-Gemma3n-Gitea",
   "version": "1.0.0",
+  "icon": "images/icon.png",
   "engines": {
     "vscode": "^1.74.0"
   },
@@ -161,6 +162,11 @@
           "default": "http://localhost:11434",
           "description": "%config.baseUrl.description%"
         },
+        "ollamaCodeAnalyzer.model": {
+          "type": "string",
+          "default": "codellama:7b",
+          "description": "El modelo de Ollama que se usará para el análisis y la generación de código."
+        },
         "ollamaCodeAnalyzer.outputLanguage": {
           "type": "string",
           "default": "Español",
@@ -169,13 +175,44 @@
             "English"
           ],
           "description": "%config.outputLanguage.description%"
+        },
+        "ollamaCodeAnalyzer.supportedLanguages": {
+          "type": "array",
+          "default": [
+            "csharp",
+            "javascript",
+            "typescript",
+            "python",
+            "java"
+          ],
+          "description": "Los lenguajes de programación que serán analizados por la extensión."
+        },
+        "ollamaCodeAnalyzer.maxLines": {
+          "type": "number",
+          "default": 2000,
+          "description": "El número máximo de líneas que un fichero puede tener para ser analizado."
+        },
+        "ollamaCodeAnalyzer.analyzeOnOpen": {
+          "type": "boolean",
+          "default": true,
+          "description": "Analizar un fichero automáticamente cuando se abre."
+        },
+        "ollamaCodeAnalyzer.analyzeOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Analizar un fichero automáticamente cuando se guarda."
+        },
+        "ollamaCodeAnalyzer.autoAnalyze": {
+          "type": "boolean",
+          "default": false,
+          "description": "Analizar un fichero automáticamente mientras escribes."
         }
       }
     }
   },
   "scripts": {
     "vscode:prepublish": "npm run build",
-    "generate-nls": "node ./scripts/generate-nls.js", 
+    "generate-nls": "node ./scripts/generate-nls.js",
     "build": "npm run generate-nls && tsc -p ./ && cpx \"src/prompts/**/*.json\" out/prompts && cpx \"src/media/*\" out/media",
     "compile": "npm run generate-nls && tsc -p ./",
     "watch": "npm-run-all -p watch:*",
