@@ -7,17 +7,24 @@
 import * as vscode from 'vscode';
 import { UnifiedResponseWebview } from '../../ui/webviews';
 import { I18n } from '../../internationalization/i18n';
+import { Logger } from '../../utils/logger'; // Importa el Logger
 
 export async function executeCommandWithWebview(
     vsCodeCtx: vscode.ExtensionContext,
-    loadingTitleKey: string, // <-- CAMBIO: Ahora pasamos la clave de i18n
+    loadingTitleKey: string,
     serviceCall: () => Promise<{ prompt: string, response: string | null } | null>
 ) {
+    // --- AÑADIDO: Forzamos la visibilidad del Logger ---
+    Logger.show(); // <-- Muestra el panel de "Output"
+    Logger.log(`Ejecutando comando: ${loadingTitleKey}`); // <-- Escribe en el log
+
     const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer');
     const model = config.get<string>('model');
-    const title = I18n.t(loadingTitleKey); // <-- CAMBIO: Resolvemos el título aquí
+    const title = I18n.t(loadingTitleKey);
 
     if (!model) {
+        const errorMsg = 'No hay un modelo configurado.';
+        Logger.error(errorMsg); // <-- Log del error
         vscode.window.showErrorMessage(I18n.t('error.noModelConfigured'));
         return;
     }
@@ -30,12 +37,19 @@ export async function executeCommandWithWebview(
         if (UnifiedResponseWebview.currentPanel) {
             if (result && result.response) {
                 UnifiedResponseWebview.currentPanel.showResponse(result.response);
+                Logger.log(`Comando '${loadingTitleKey}' completado con éxito.`);
             } else {
                 UnifiedResponseWebview.currentPanel.showResponse(I18n.t('error.noValidResponse'));
+                Logger.error(`Comando '${loadingTitleKey}' no devolvió una respuesta válida.`);
             }
         }
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : I18n.t('error.unknown');
+
+        // --- AÑADIDO: Log detallado del error ---
+        Logger.error(`Error ejecutando el comando '${loadingTitleKey}':`, error);
+        Logger.show(); // <-- Asegúrate de que el panel es visible si hay un error
+
         if (UnifiedResponseWebview.currentPanel) {
             UnifiedResponseWebview.currentPanel.showResponse(`${I18n.t('error.executingCommand')}: ${errorMessage}`);
         } else {

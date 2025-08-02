@@ -9,12 +9,15 @@ import { CoreExtensionContext } from '../context/ExtensionContext';
 import { UnifiedResponseWebview } from '../ui/webviews';
 import { I18n } from '../internationalization/i18n';
 import { executeCommandWithWebview } from './utils/CommandUtils';
+import { Logger } from '../utils/logger';
 
 export async function runAnalysis(
     document: vscode.TextDocument,
     coreCtx: CoreExtensionContext,
     vsCodeCtx: vscode.ExtensionContext
 ) {
+    Logger.show();
+    Logger.log(`Ejecutando análisis para: ${document.uri.fsPath}`);
     const title = I18n.t('command.analyzeCurrentDocument.title'); // <-- CAMBIO: Resolvemos el título aquí
     const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer');
     const model = config.get<string>('model');
@@ -41,6 +44,8 @@ export async function runAnalysis(
         if (UnifiedResponseWebview.currentPanel) {
             UnifiedResponseWebview.currentPanel.showResponse(`${I18n.t('error.duringAnalysis')}: ${errorMessage}`);
         }
+         Logger.error(`Error durante el análisis:`, error);
+        Logger.show();
     }
 }
 

@@ -11,7 +11,7 @@ import { Logger } from './utils/logger';
 
 let coreContext: CoreExtensionContext;
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
     // --- 2. Inicializar el Logger ---
     Logger.initialize('Ollama Code Analyzer');
     Logger.log('Activando extensión "Ollama Code Analyzer"...');
@@ -35,7 +35,7 @@ export function activate(context: vscode.ExtensionContext) {
             codeActionProvider
         );
 
-        checkServicesAvailability(coreContext.ollamaService);
+        await checkServicesAvailability(coreContext.ollamaService);
 
         Logger.log('Extensión "Ollama Code Analyzer" activada y lista.');
 
