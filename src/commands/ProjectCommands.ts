@@ -103,13 +103,13 @@ export function registerProjectCommands(coreCtx: CoreExtensionContext, vsCodeCtx
           if (!panel) return;
 
           if (allFileStructures.length > 0) {
-            Logger.log('Enviando a Ollama para síntesis:', allFileStructures);
+            Logger.log('Sending to Ollama for síntesis:', allFileStructures);
             const model = vscode.workspace.getConfiguration('ollamaCodeAnalyzer').get<string>('model')!;
             const { uml: finalUmlContent, rawResponse } = await coreCtx.ollamaService.synthesizeUmlDiagram(
               allFileStructures,
               model,
             );
-            Logger.log('Respuesta de Ollama para síntesis:', { finalUmlContent, rawResponse });
+            Logger.log('Ollama response from síntesis:', { finalUmlContent, rawResponse });
 
             if (finalUmlContent) {
               Logger.log('finalUmlContent is not empty, proceeding to render.');

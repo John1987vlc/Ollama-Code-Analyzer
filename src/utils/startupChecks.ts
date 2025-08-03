@@ -21,8 +21,7 @@ export async function checkServicesAvailability(
     const ollamaAvailable = await ollamaService.isAvailable();
     if (!ollamaAvailable) {
         const selection = await vscode.window.showWarningMessage(
-            'Ollama no parece estar ejecutándose. El análisis de código no funcionará.',
-            'Abrir Docs de Ollama', 'Reintentar'
+            'Ollama code analyzer is not working','Reintentar'
         );
         if (selection === 'Reintentar') {
             // Vuelve a ejecutar la comprobación.
