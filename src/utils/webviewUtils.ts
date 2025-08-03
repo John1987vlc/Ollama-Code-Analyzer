@@ -27,7 +27,7 @@ export function escape(htmlStr: string): string {
  */
 export function parseResponse(text: string): ParsedWebviewContent {
     const codeBlocks: { language: string; code: string }[] = [];
-    let thinking = "El modelo no proporcionó una cadena de pensamiento explícita.";
+    let thinking = "No thinking response.";
     let content = typeof text === 'string' ? text : '';
 
     const thinkMatch = content.match(/<think>([\s\S]*?)<\/think>/);

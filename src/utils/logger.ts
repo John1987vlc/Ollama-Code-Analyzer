@@ -67,7 +67,7 @@ export class Logger {
 
     public static show() {
         if (this.outputChannel) {
-            this.outputChannel.show(true); // El 'true' enfoca el panel
+            this.outputChannel.show(false); // El 'true' enfoca el panel
         }
     }
 }

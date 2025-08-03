@@ -41,7 +41,7 @@ async function withProjectFiles<TAccum>(
   UnifiedResponseWebview.createOrShow(vsCodeCtx.extensionUri, title);
   const panel = UnifiedResponseWebview.currentPanel;
   if (!panel) {
-    vscode.window.showErrorMessage('No se pudo inicializar la webview');
+    vscode.window.showErrorMessage('Can\'t open webview ');
     return { success: false, accum: initialAccum };
   }
 

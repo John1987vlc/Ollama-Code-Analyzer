@@ -15,6 +15,7 @@ export function getWebviewHtml(
     md: any,
     isLoading = false,
     isUmlGeneration = false,
+    referencedFilesTitle: string | undefined,
     i18n: any
 ): string {
     const styleUri = panel.webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'src', 'ui', 'media', 'webview.css'));

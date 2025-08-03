@@ -72,7 +72,7 @@ export class UnifiedResponseWebview {
         );
     }
 
-    private _updateWebview(isLoading = false, isUmlGeneration = false, data: ParsedWebviewContent = { thinking: '', markdownContent: '', codeBlocks: [] }) {
+    private _updateWebview(isLoading = false, isUmlGeneration = false, data: ParsedWebviewContent = { thinking: '', markdownContent: '', codeBlocks: [] }, referencedFilesTitle?: string) {
         Logger.log(`_updateWebview called with: isLoading=${isLoading}, isUmlGeneration=${isUmlGeneration}`);
         this._panel.webview.html = getWebviewHtml(
             this._panel,
@@ -83,6 +83,7 @@ export class UnifiedResponseWebview {
             this.md,
             isLoading,
             isUmlGeneration,
+            referencedFilesTitle,
                         {
                 copied: I18n.t('webview.script.copied'),
                 thinking: I18n.t('webview.panel.thinking'),
@@ -116,10 +117,13 @@ export class UnifiedResponseWebview {
         this._updateWebview(true, false); // <-- isUmlGeneration = false
     }
 
-    public showResponse(fullResponse: string, debugData?: any, rawResponse?: string | null, isRenderedUml: boolean = false) {
+    public showResponse(fullResponse: string, debugData?: any, rawResponse?: string | null, isRenderedUml: boolean = false, referencedFilesTitle?: string) {
         
         const parsedContent = parseResponse(fullResponse);
         let thinkingContent = '';
+        if (referencedFilesTitle) {
+            thinkingContent += `**${referencedFilesTitle}**\n\n`;
+        }
         if (debugData) {
             const debugJson = JSON.stringify(debugData, null, 2);
             thinkingContent += `**Datos enviados al modelo para la síntesis final:** ${debugJson} \``
@@ -128,13 +132,14 @@ export class UnifiedResponseWebview {
             if(thinkingContent) {
                 thinkingContent += `\n\n<hr>\n\n`;
             }
-            thinkingContent += `**Respuesta RAW del LLM:**\n\n\${rawResponse}`;
+            thinkingContent += `**Respuesta RAW del LLM:**\n\n\`\`\`${rawResponse}\`\`\``;
         } 
         parsedContent.thinking = thinkingContent;
+        parsedContent.referencedFilesTitle = referencedFilesTitle;
         // Reset UML progress state and loading message when showing the final response
         this._umlProgressState = { processedFiles: [], remainingFiles: 0 };
         this._loadingMessage = ''; // Clear the loading message
-        this._updateWebview(false, isRenderedUml, parsedContent);
+        this._updateWebview(false, isRenderedUml, parsedContent, referencedFilesTitle);
     }
 
     public dispose() {

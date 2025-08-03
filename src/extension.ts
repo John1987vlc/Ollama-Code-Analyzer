@@ -14,7 +14,7 @@ export let coreContext: CoreExtensionContext;
 export async function activate(context: vscode.ExtensionContext) {
     // --- 2. Inicializar el Logger ---
     Logger.initialize('Ollama Code Analyzer');
-    Logger.log('Activando extensión "Ollama Code Analyzer"...');
+    Logger.log('Activating extensíon "Ollama Code Analyzer"...');
 
     try {
         I18n.initialize(context); 
@@ -37,12 +37,12 @@ export async function activate(context: vscode.ExtensionContext) {
 
         await checkServicesAvailability(coreContext.ollamaService);
 
-        Logger.log('Extensión "Ollama Code Analyzer" activada y lista.');
+        Logger.log('Extensión "Ollama Code Analyzer" running.');
 
     } catch (error) {
         // --- 3. Capturar cualquier error durante la activación ---
-        Logger.error('Error catastrófico durante la activación de la extensión.', error);
+        Logger.error('Error activating extension.', error);
         Logger.show(); // Muestra el panel de logs automáticamente si hay un error
-        vscode.window.showErrorMessage('Error al activar Ollama Code Analyzer. Revisa los logs en el panel de Salida.');
+        vscode.window.showErrorMessage('Error activating extension. Check logs for more detail');
     }
 }
