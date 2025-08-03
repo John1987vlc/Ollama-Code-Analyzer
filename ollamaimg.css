@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Gemma3n Logo</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #ffffff;
+      margin: 0;
+    }
+
+    .logo-container {
+      text-align: center;
+    }
+
+    .logo-container img {
+      width: 250px;
+      max-width: 90%;
+    }
+
+    .logo-caption {
+      font-family: Arial, sans-serif;
+      font-size: 1.5rem;
+      margin-top: 0.5rem;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <div class="logo-container">
+    <img src="e1c55f65-103a-4d37-85c4-1a51685cb693.png" alt="Gemma3n logo with a llama and star" />
+    <div class="logo-caption">Gemma3n</div>
+  </div>
+</body>
+</html>
