@@ -2,13 +2,14 @@
 
 import * as vscode from 'vscode';
 import MarkdownIt from 'markdown-it';
-const kroki = require('@kazumatu981/markdown-it-kroki');
 
 import { parseResponse } from '../utils/webviewUtils';
 import { getWebviewHtml } from './webviewsContent';
 import { ParsedWebviewContent, UmlProgressState } from './webviewsTypes';
 import { Logger } from '../utils/logger';
 
+
+import { I18n } from '../internationalization/i18n';
 
 export class UnifiedResponseWebview {
     public static currentPanel: UnifiedResponseWebview | undefined;
@@ -50,7 +51,7 @@ export class UnifiedResponseWebview {
     private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
         this._panel = panel;
         this._extensionUri = extensionUri;
-        this.md = new MarkdownIt({ html: true, linkify: true, typographer: true }).use(kroki);
+        this.md = new MarkdownIt({ html: true, linkify: true, typographer: true });
 
         this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
 
@@ -59,10 +60,10 @@ export class UnifiedResponseWebview {
                 switch (message.command) {
                     case 'copyCode':
                         vscode.env.clipboard.writeText(message.text);
-                        vscode.window.showInformationMessage('¡Código copiado al portapapeles!');
+                        vscode.window.showInformationMessage(I18n.t('webview.panel.codeCopied'));
                         break;
                     case 'log':
-                        Logger.log(`Webview: ${message.message}`);
+                        // Logger.log(`Webview: ${message.message}`);
                         break;
                 }
             },
@@ -72,6 +73,7 @@ export class UnifiedResponseWebview {
     }
 
     private _updateWebview(isLoading = false, isUmlGeneration = false, data: ParsedWebviewContent = { thinking: '', markdownContent: '', codeBlocks: [] }) {
+        Logger.log(`_updateWebview called with: isLoading=${isLoading}, isUmlGeneration=${isUmlGeneration}`);
         this._panel.webview.html = getWebviewHtml(
             this._panel,
             this._extensionUri,
@@ -80,37 +82,59 @@ export class UnifiedResponseWebview {
             this._loadingMessage,
             this.md,
             isLoading,
-            isUmlGeneration // <-- Se pasa el flag
+            isUmlGeneration,
+                        {
+                copied: I18n.t('webview.script.copied'),
+                thinking: I18n.t('webview.panel.thinking'),
+                umlProgress: I18n.t('webview.panel.umlProgress'),
+                analyzedFiles: I18n.t('webview.panel.analyzedFiles'),
+                currentlyAnalyzing: I18n.t('webview.panel.currentlyAnalyzing'),
+                remainingFiles: I18n.t('webview.panel.remainingFiles'),
+                loaderAriaLabel: I18n.t('webview.panel.loaderAriaLabel'),
+                panelTitle: I18n.t('webview.panel.title')
+            }
         );
     }
 
     // --- MÉTODOS DE UML RESTAURADOS ---
     public showUmlInitialLoading(totalFiles: number) {
         this._umlProgressState = { processedFiles: [], remainingFiles: totalFiles };
-        this._loadingMessage = 'Analizando archivos para generar diagrama UML...';
+        this._loadingMessage = I18n.t('webview.panel.umlLoading');
         this._updateWebview(true, true); // <-- isUmlGeneration = true
     }
 
     public showUmlGenerationProgress(filePath: string, components: string) {
         this._umlProgressState.processedFiles.push({ path: filePath, components });
         this._umlProgressState.remainingFiles--;
-        this._loadingMessage = 'Analizando archivos para generar diagrama UML...';
+        this._loadingMessage = I18n.t('webview.panel.umlLoading');
         this._updateWebview(true, true); // <-- isUmlGeneration = true
     }
     // --- FIN DE MÉTODOS DE UML ---
 
     public showLoading() {
-        this._loadingMessage = 'Contactando con Gemma3...';
+        this._loadingMessage = I18n.t('webview.panel.loading');
         this._updateWebview(true, false); // <-- isUmlGeneration = false
     }
 
-    public showResponse(fullResponse: string, debugData?: any) {
+    public showResponse(fullResponse: string, debugData?: any, rawResponse?: string | null, isRenderedUml: boolean = false) {
+        
         const parsedContent = parseResponse(fullResponse);
+        let thinkingContent = '';
         if (debugData) {
             const debugJson = JSON.stringify(debugData, null, 2);
-            parsedContent.thinking = `**Datos enviados al modelo para la síntesis final:**\n\n\`\`\`json\n${debugJson}\n\`\`\``;
+            thinkingContent += `**Datos enviados al modelo para la síntesis final:** ${debugJson} \``
         }
-        this._updateWebview(false, false, parsedContent);
+		if (rawResponse) {
+            if(thinkingContent) {
+                thinkingContent += `\n\n<hr>\n\n`;
+            }
+            thinkingContent += `**Respuesta RAW del LLM:**\n\n\${rawResponse}`;
+        } 
+        parsedContent.thinking = thinkingContent;
+        // Reset UML progress state and loading message when showing the final response
+        this._umlProgressState = { processedFiles: [], remainingFiles: 0 };
+        this._loadingMessage = ''; // Clear the loading message
+        this._updateWebview(false, isRenderedUml, parsedContent);
     }
 
     public dispose() {

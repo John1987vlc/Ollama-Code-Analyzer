@@ -27,7 +27,16 @@ suite('Webview Content Test Suite', () => {
             render: (content: string) => content
         };
 
-        const html = getWebviewHtml(panel, extensionUri, data, umlProgressState, loadingMessage, md, true, false);
+        const html = getWebviewHtml(panel, extensionUri, data, umlProgressState, loadingMessage, md, true, false, {
+            copied: 'Copied!',
+            thinking: 'Thinking...',
+            umlProgress: 'Analyzed {0} of {1} files.',
+            analyzedFiles: 'Analyzed Files:',
+            currentlyAnalyzing: 'Currently analyzing...',
+            remainingFiles: '{0} files remaining.',
+            loaderAriaLabel: 'Loading',
+            panelTitle: 'Ollama Response'
+        });
 
         assert.ok(html.includes('<div class="loader-container"'), 'Should contain loader container');
         assert.ok(html.includes('<h1 class="loader-title">Loading...</h1>'), 'Should contain loader title');
@@ -55,7 +64,16 @@ suite('Webview Content Test Suite', () => {
             render: (content: string) => content
         };
 
-        const html = getWebviewHtml(panel, extensionUri, data, umlProgressState, loadingMessage, md, false, false);
+        const html = getWebviewHtml(panel, extensionUri, data, umlProgressState, loadingMessage, md, false, false, {
+            copied: 'Copied!',
+            thinking: 'Thinking...',
+            umlProgress: 'Analyzed {0} of {1} files.',
+            analyzedFiles: 'Analyzed Files:',
+            currentlyAnalyzing: 'Currently analyzing...',
+            remainingFiles: '{0} files remaining.',
+            loaderAriaLabel: 'Loading',
+            panelTitle: 'Ollama Response'
+        });
 
         assert.ok(html.includes('<div class="response-container"'), 'Should contain response container');
         assert.ok(html.includes('Markdown content'), 'Should contain markdown content');
@@ -83,7 +101,16 @@ suite('Webview Content Test Suite', () => {
             render: (content: string) => content
         };
 
-        const html = getWebviewHtml(panel, extensionUri, data, umlProgressState, loadingMessage, md, false, false);
+        const html = getWebviewHtml(panel, extensionUri, data, umlProgressState, loadingMessage, md, false, false, {
+            copied: 'Copied!',
+            thinking: 'Thinking...',
+            umlProgress: 'Analyzed {0} of {1} files.',
+            analyzedFiles: 'Analyzed Files:',
+            currentlyAnalyzing: 'Currently analyzing...',
+            remainingFiles: '{0} files remaining.',
+            loaderAriaLabel: 'Loading',
+            panelTitle: 'Ollama Response'
+        });
 
         assert.ok(
             html.includes(

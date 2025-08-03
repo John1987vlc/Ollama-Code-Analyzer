@@ -9,7 +9,7 @@ import { RefactorProvider } from './providers/RefactorProvider';
 import { I18n } from './internationalization/i18n';
 import { Logger } from './utils/logger'; 
 
-let coreContext: CoreExtensionContext;
+export let coreContext: CoreExtensionContext;
 
 export async function activate(context: vscode.ExtensionContext) {
     // --- 2. Inicializar el Logger ---
@@ -45,8 +45,4 @@ export async function activate(context: vscode.ExtensionContext) {
         Logger.show(); // Muestra el panel de logs automáticamente si hay un error
         vscode.window.showErrorMessage('Error al activar Ollama Code Analyzer. Revisa los logs en el panel de Salida.');
     }
-}
-
-export function deactivate() {
-    Logger.log('Desactivando extensión...');
 }

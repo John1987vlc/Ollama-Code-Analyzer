@@ -11,8 +11,19 @@
   "command.generateUnitTest.title": "Generate unit test",
   "command.findDuplicateLogic.title": "Detect duplicate logic",
   "command.generateUmlDiagram.title": "Generate project UML Diagram",
+  "command.generateUmlDiagram.generationFailed": "The UML diagram could not be generated. Please check the Ollama model's response.",
   "command.configureLanguage.title": "Configure Output Language",
   "command.checkProjectStandards.title": "Validate project standards",
-  "config.outputLanguage.description": "Language for the AI's responses (comments, explanations, etc.).",
-  "config.baseUrl.description": "Base URL of the Ollama service"
+  "config.baseUrl.description": "Base URL of the Ollama service",
+  "webview.panel.title": "Ollama Response",
+  "webview.panel.loading": "Contacting Ollama...",
+  "webview.panel.umlLoading": "Analyzing files to generate UML diagram...",
+  "webview.panel.codeCopied": "Code copied to clipboard!",
+  "webview.panel.thinking": "View Model's Thought Process",
+  "webview.panel.umlProgress": "Analyzed {0} of {1} files.",
+  "webview.panel.analyzedFiles": "Analyzed Files:",
+  "webview.panel.currentlyAnalyzing": "Currently analyzing...",
+  "webview.panel.remainingFiles": "{0} files remaining.",
+  "webview.panel.loaderAriaLabel": "Loading",
+  "webview.script.copied": "Copied!"
 }

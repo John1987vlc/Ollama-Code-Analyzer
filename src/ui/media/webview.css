@@ -270,3 +270,9 @@ body {
     font-size: 0.9em;
     color: var(--vscode-descriptionForeground); /* Gray out remaining files */
 }
+.diagrama-uml {
+    /* Ensure SVG text inherits VS Code foreground color */
+    color: var(--vscode-editor-foreground);
+    width: 85%;
+    margin: 0 auto;
+}

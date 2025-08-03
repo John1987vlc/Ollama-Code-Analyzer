@@ -63,7 +63,7 @@
                     });
 
                     const originalText = button.textContent;
-                    button.textContent = '¡Copiado!';
+                    button.textContent = i18n.copied;
                     setTimeout(() => {
                         button.textContent = originalText;
                     }, 2000);

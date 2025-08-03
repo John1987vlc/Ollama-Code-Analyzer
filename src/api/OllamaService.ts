@@ -9,6 +9,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { PromptingService } from '../services/PromptingService';
 import { Logger } from '../utils/logger'; 
+const plantuml = require('node-plantuml'); 
 
 // ... (interfaces sin cambios) ...
 interface GenerateOptions {
@@ -223,25 +224,41 @@ export class OllamaService {
 /**
  * Fase 2: Genera el diagrama PlantUML final a partir de la estructura completa del proyecto.
  */
-public async synthesizeUmlDiagram(projectStructure: any[], model: string): Promise<string | null> {
+public async synthesizeUmlDiagram(projectStructure: any[], model: string): Promise<{ uml: string | null, rawResponse: string | null }> {
+    Logger.log('Iniciando síntesis de diagrama UML.');
+    Logger.log('Estructura del proyecto recibida:', projectStructure);
+
     try {
         const prompt = await this.promptingService.getUmlSynthesizePrompt(projectStructure);
+        Logger.log('Prompt generado para síntesis UML:', prompt);
+
         const response = await this.generate(prompt, model, { temperature: 0.1 });
 
-        if (!response?.response) {return null;}
+        Logger.log('Respuesta cruda de Ollama para síntesis UML:', response);
+
+        if (!response?.response) {
+            Logger.log('Respuesta vacía de Ollama para síntesis UML.');
+            return { uml: null, rawResponse: null };
+        }
 
         // Extraer solo el bloque de PlantUML
         const umlMatch = response.response.match(/```plantuml\s*([\s\S]*?)```/);
-        return umlMatch ? umlMatch[1] : null;
+        const uml = umlMatch ? umlMatch[1] : null;
+
+        if (!uml) {
+            Logger.log('No se encontró bloque PlantUML en la respuesta de síntesis.', response.response);
+        }
+
+        return { uml, rawResponse: response.response };
 
     } catch (error) {
-        console.error('Error sintetizando el diagrama UML:', error);
+        Logger.error('Error sintetizando el diagrama UML:', error);
         vscode.window.showErrorMessage(`Error generando el diagrama final: ${(error as Error).message}`);
-        return null;
+        return { uml: null, rawResponse: null };
     }
 }
 
- public async generate(
+  public async generate(
       prompt: string, 
       model: string, 
       options: any = {}
@@ -290,4 +307,37 @@ public async synthesizeUmlDiagram(projectStructure: any[], model: string): Promi
           return null;
       }
   }
+
+    public async renderPlantUml(plantUmlText: string): Promise<string | null> {
+        Logger.log('Inside renderPlantUml. Input text:', plantUmlText);
+        if (!plantUmlText || plantUmlText.trim() === '') {
+            Logger.error('renderPlantUml called with empty or invalid text.');
+            return Promise.reject('PlantUML content is empty or invalid.');
+        }
+
+        return new Promise((resolve, reject) => {
+            // Ensure transparent background and use currentColor for text
+            const pumlWithStyle = `skinparam background transparent\n${plantUmlText}`;
+
+            const gen = plantuml.generate(pumlWithStyle, { format: 'svg' });
+            let svg = '';
+            gen.out.on('data', (chunk: any) => {
+                svg += chunk.toString();
+            });
+            gen.out.on('end', () => {
+                // Inject CSS to make text use currentColor
+                const styledSvg = svg.replace(
+                    '</svg>',
+                    `<style>text { fill: currentColor !important; }</style></svg>`
+                );
+                Logger.log('PlantUML rendering finished. Styled SVG length:', styledSvg.length);
+                resolve(styledSvg);
+            });
+            gen.out.on('error', (err: any) => {
+                Logger.error('Error during PlantUML SVG generation stream:', err);
+                vscode.window.showErrorMessage('Failed to render PlantUML diagram. Please ensure Graphviz is installed and configured correctly. See the README for instructions.');
+                reject(err);
+            });
+        });
+    }
 }

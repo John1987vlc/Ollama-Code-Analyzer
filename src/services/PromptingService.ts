@@ -38,7 +38,7 @@ export class PromptingService {
 
     private buildPrompt(templateKey: keyof typeof this.promptTemplates, replacements: Record<string, any>): string {
      
-         const outputLanguage = vscode.workspace.getConfiguration('ollamaCodeAnalyzer').get<string>('outputLanguage', 'Español');
+         const outputLanguage = vscode.env.language; // Use VS Code's UI language
 
          const template = this.promptTemplates[templateKey];
         
@@ -66,16 +66,23 @@ export class PromptingService {
         // Añadir el código o la instrucción del usuario al final
         if(replacements.code) {
             prompt += `--- \nCode to Analyze (${replacements.language}):\n\`\`\`${replacements.language}\n${replacements.code}\n\`\`\``;
-        } else if (replacements.files) {
-            // Manejar múltiples archivos para el diagrama UML
-            prompt += `--- \nProject Files to Analyze:\n\n`;
-            for (const file of replacements.files) {
-                prompt += `// FILE: ${file.path}\n\`\`\`\n${file.content}\n\`\`\`\n\n`;
-            }
+        } else if (replacements.projectStructure) {
+            prompt += `--- 
+PROJECT STRUCTURE:
+\
+${replacements.projectStructure}
+\
+
+`;
         }
 
         if(replacements.instruction) {
-             prompt += `--- \nUSER INSTRUCTION:\n"${replacements.instruction}"\n---\n\nCODE SNIPPET (${replacements.language}):`;
+             prompt += `--- 
+USER INSTRUCTION:
+"${replacements.instruction}"
+---
+
+CODE SNIPPET (${replacements.language}):`;
         }
 
 
@@ -133,6 +140,13 @@ export class PromptingService {
     }
 
     public async getUmlSynthesizePrompt(projectStructure: any[]): Promise<string> {
+        const structureString = JSON.stringify(projectStructure, null, 2);
+        return this.buildPrompt('uml_synthesize', { 
+            projectStructure: structureString 
+        });
+    }
+
+    public async getUmlDiagramPrompt(projectStructure: any[]): Promise<string> {
         const structureString = JSON.stringify(projectStructure, null, 2);
         return this.buildPrompt('uml_synthesize', { 
             projectStructure: structureString 

@@ -16,9 +16,9 @@ import { RefactorProvider } from '../providers/RefactorProvider';
  * Se encarga de la inicialización y la inyección de dependencias.
  */
 export class CoreExtensionContext {
-    public readonly ollamaService: OllamaService;
-    public readonly promptingService: PromptingService;
-    public readonly codeAnalyzer: CodeAnalyzer;
+    public ollamaService: OllamaService;
+    public promptingService: PromptingService;
+    public codeAnalyzer: CodeAnalyzer;
     public readonly refactorProvider: RefactorProvider;
     public readonly diagnosticCollection: vscode.DiagnosticCollection;
 

@@ -15,7 +15,7 @@ suite('CSP Test Suite', () => {
                 cspSource: 'vscode-webview-resource:'
             }
         } as vscode.WebviewPanel;
-        const extensionUri = vscode.Uri.file('C:/gemma3n-codeassistant');
+                const extensionUri = vscode.Uri.file('C:/gemma3n-codeassistant');
         const data: ParsedWebviewContent = {
             thinking: '',
             markdownContent: '',
@@ -30,15 +30,24 @@ suite('CSP Test Suite', () => {
             render: (content: string) => content
         };
 
-        const html = getWebviewHtml(panel, extensionUri, data, umlProgressState, loadingMessage, md, false, false);
+        const html = getWebviewHtml(panel, extensionUri, data, umlProgressState, loadingMessage, md, false, false, {
+            copied: 'Copied!',
+            thinking: 'View Model\'s Thought Process',
+            umlProgress: 'Analyzed {0} of {1} files.',
+            analyzedFiles: 'Analyzed Files:',
+            currentlyAnalyzing: 'Currently analyzing...', 
+            remainingFiles: '{0} files remaining.',
+            loaderAriaLabel: 'Loading',
+            panelTitle: 'Ollama Response'
+        });
 
         // Check for the presence of the correct URIs for main.js and webview.css
         assert.ok(
-            html.includes('vscode-webview-resource:/c%3A/gemma3n-codeassistant/src/ui/media/main.js'),
+            html.includes('vscode-webview-resource:/mock/extension/path/src/ui/media/main.js'),
             'Should contain correct URI for main.js'
         );
         assert.ok(
-            html.includes('vscode-webview-resource:/c%3A/gemma3n-codeassistant/src/ui/media/webview.css'),
+            html.includes('vscode-webview-resource:/mock/extension/path/src/ui/media/webview.css'),
             'Should contain correct URI for webview.css'
         );
     });

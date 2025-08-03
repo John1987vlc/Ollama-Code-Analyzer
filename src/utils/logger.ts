@@ -1,49 +1,67 @@
 // src/utils/Logger.ts
 import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as path from 'path';
 
 export class Logger {
     private static outputChannel: vscode.OutputChannel;
+    private static logFilePath: string;
 
     public static initialize(channelName: string) {
         if (!this.outputChannel) {
             this.outputChannel = vscode.window.createOutputChannel(channelName);
         }
+        // Define la ruta del archivo de log en el directorio de la extensión
+        // Asegúrate de que el directorio 'logs' exista
+                const extensionLogDir = path.join(vscode.extensions.getExtension('ollama-code-analyzer-Gemma3n.ollama-code-analyzer')!.extensionPath, 'logs');
+        if (!fs.existsSync(extensionLogDir)) {
+            fs.mkdirSync(extensionLogDir, { recursive: true });
+        }
+        this.logFilePath = path.join(extensionLogDir, 'extension.log');
+    }
+
+    private static writeToFile(message: string) {
+        if (this.logFilePath) {
+            fs.appendFileSync(this.logFilePath, message + '\n', 'utf-8');
+        }
     }
 
     public static log(message: string, ...optionalParams: any[]) {
-        if (!this.outputChannel) {
-            console.log(message, ...optionalParams);
-            return;
-        }
         const timestamp = new Date().toISOString();
-        this.outputChannel.appendLine(`[${timestamp}] [INFO] ${message}`);
+        let logMessage = `[${timestamp}] [INFO] ${message}`;
+        this.outputChannel?.appendLine(logMessage);
+        this.writeToFile(logMessage);
+
         if (optionalParams.length > 0) {
             optionalParams.forEach(param => {
                 const paramStr = typeof param === 'object' ? JSON.stringify(param, null, 2) : String(param);
-                this.outputChannel.appendLine(paramStr);
+                this.outputChannel?.appendLine(paramStr);
+                this.writeToFile(paramStr);
             });
         }
     }
 
     public static error(message: string, error?: any) {
-        if (!this.outputChannel) {
-            console.error(message, error);
-            return;
-        }
         const timestamp = new Date().toISOString();
-        this.outputChannel.appendLine(`[${timestamp}] [ERROR] ${message}`);
+        let errorMessage = `[${timestamp}] [ERROR] ${message}`;
+        this.outputChannel?.appendLine(errorMessage);
+        this.writeToFile(errorMessage);
+
         if (error) {
+            let errorDetails = '';
             if (error instanceof Error) {
-                this.outputChannel.appendLine(`[ERROR] Name: ${error.name}`);
-                this.outputChannel.appendLine(`[ERROR] Message: ${error.message}`);
+                errorDetails += `[ERROR] Name: ${error.name}\n`;
+                errorDetails += `[ERROR] Message: ${error.message}\n`;
                 if (error.stack) {
-                    this.outputChannel.appendLine(`[ERROR] Stack: ${error.stack}`);
+                    errorDetails += `[ERROR] Stack: ${error.stack}\n`;
                 }
             } else if (typeof error === 'object') {
-                this.outputChannel.appendLine(`[ERROR] Details: ${JSON.stringify(error, null, 2)}`);
+                errorDetails += `[ERROR] Details: ${JSON.stringify(error, null, 2)}\n`;
             } else {
-                this.outputChannel.appendLine(`[ERROR] Details: ${String(error)}`);
+                errorDetails += `[ERROR] Details: ${String(error)}\n`;
             }
+            this.outputChannel?.appendLine(errorDetails);
+            this.writeToFile(errorDetails);
         }
     }
 

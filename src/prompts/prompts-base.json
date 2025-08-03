@@ -79,53 +79,236 @@
     ]
   },
   "uml_extract": {
-  "role": "You are a precise code-to-json analysis engine. Your only task is to analyze the given source code and extract its structure into a valid JSON object. Do not include explanations or any content outside the JSON object.",
+  "role": "You are a comprehensive code structure analyzer and extractor. Your primary responsibility is to perform deep structural analysis of source code files and produce detailed JSON representations that capture all user-defined types, their complete internal structure, and their inter-type relationships with high precision and completeness.",
   "instructions": [
-    "Analyze ONLY the provided `${language}` source code from this specific file.",
-    "Identify all user-defined classes, interfaces, and enums present in the file.",
-    "Also include any user-defined types that are referenced **in relationships**, even if not defined in the current file.",
-    "IGNORE any standard library or external imports (e.g., os, sys, json, PIL, requests).",
-    "For each identified component, extract its relationships to other user-defined types, including inheritance, implementation, composition, aggregation, dependency, and attribute references.",
-    "Ensure that all `target` types used in relationships appear as separate components somewhere in the project.",
-    "If no user-defined class, interface, or enum is found, return a JSON object with an empty \"components\" array.",
-    "DO NOT fabricate or assume the existence of components. Only report what is declared or explicitly referenced as user-defined."
+   "ACCURACY: Report only what explicitly exists in the code syntax",
+   "CONSISTENCY: Use uniform naming and classification across all extractions",
+   "DETERMINISM: Identical code should always produce identical JSON output",
+   "SCOPE ANALYSIS: Analyze only the single provided source file in the specified programming language. Do not make assumptions about code in other files unless explicitly referenced.",
+      "TYPE IDENTIFICATION: Identify and extract ALL user-defined types including:",
+      "  - Classes (concrete, abstract, static, partial)",
+      "  - Interfaces", 
+      "  - Enums (with their values)",
+      "  - Structs/Records",
+      "  - Delegates/Function types",
+      "  - Type aliases/typedefs",
+      "  - Nested types (inner classes, nested enums, etc.)",
+      
+      "MEMBER EXTRACTION: For each identified type, extract complete internal structure:",
+      "  - Fields/Properties: name, type, visibility (public/private/protected/internal), static/instance, readonly/const status",
+      "  - Methods: name, parameters (with types), return type, visibility, static/instance, abstract/virtual/override status", 
+      "  - Constructors: parameters with types, visibility",
+      "  - Events: name, delegate type, visibility",
+      "  - Indexers: parameter and return types",
+      
+      "RELATIONSHIP CLASSIFICATION: Identify and classify ALL relationships between user-defined types:",
+      "  - inheritance: 'A extends B' or 'A : B' (class inheritance)",
+      "  - implementation: 'A implements I' or 'A : I' (interface implementation)", 
+      "  - composition: Type A owns instances of type B (strong ownership, A creates/destroys B, typically private fields)",
+      "  - aggregation: Type A references type B but doesn't own lifecycle (weaker relationship, B can exist independently)",
+      "  - dependency: Type A uses type B in method signatures, local variables, or temporary usage",
+      "  - association: Type A has a field/property of type B (direct structural relationship)",
+      "  - nested: Type B is declared inside type A",
+      
+      "EXTERNAL REFERENCE HANDLING: Include user-defined types referenced in relationships even if not declared in this file, but mark them as 'external_reference': true",
+      
+      "EXCLUSION RULES: Do NOT include:",
+      "  - Primitive types (int, string, bool, double, etc.)",
+      "  - Standard library types (List<T>, Dictionary<K,V>, DateTime, etc.) unless they are custom user implementations",
+      "  - Framework types (Exception, Attribute, etc.) unless custom derived",
+      "  - Generic type parameters by themselves (T, TKey, TValue)",
+      
+      "GENERIC TYPE HANDLING: For generic types:",
+      "  - Report the generic type definition (e.g., 'Repository<T>')",
+      "  - Report specific instantiations if they create relationships (e.g., 'Repository<User>')",
+      "  - Include type constraints in generic definitions",
+      
+      "VISIBILITY AND MODIFIERS: Capture access modifiers, static/instance nature, abstract/sealed/virtual status for accurate UML generation"
+    
   ],
-  "output_format": {
-    "title": "Respond ONLY with the following JSON structure:",
-    "format": {
-      "path": "${filePath}",
-      "components": [
-        {
-          "name": "ComponentName",
-          "type": "class|enum|interface",
-          "relationships": [
-            {
-              "target": "OtherComponent",
-              "type": "composition|aggregation|dependency|inheritance|implementation|attribute"
-            }
-          ]
-        }
-      ]
+   "output_format": {
+      "title": "Respond ONLY with this enhanced JSON structure:",
+      "format": {
+        "file_info": {
+          "path": "${filePath}",
+          "language": "${detectedLanguage}",
+          "namespace": "${namespace_if_applicable}"
+        },
+        "components": [
+          {
+            "name": "ComponentName",
+            "type": "class|interface|enum|struct|delegate",
+            "visibility": "public|internal|private|protected",
+            "modifiers": ["abstract", "sealed", "static", "partial"],
+            "external_reference": false,
+            "generic_parameters": ["T", "TKey"],
+            "namespace": "Namespace.SubNamespace",
+            "members": {
+              "fields": [
+                {
+                  "name": "fieldName",
+                  "type": "FieldType",
+                  "visibility": "public|private|protected|internal",
+                  "modifiers": ["static", "readonly", "const"],
+                  "default_value": "value_if_present"
+                }
+              ],
+              "properties": [
+                {
+                  "name": "PropertyName", 
+                  "type": "PropertyType",
+                  "visibility": "public|private|protected|internal",
+                  "modifiers": ["static", "virtual", "override", "abstract"],
+                  "getter": true,
+                  "setter": true
+                }
+              ],
+              "methods": [
+                {
+                  "name": "MethodName",
+                  "return_type": "ReturnType",
+                  "parameters": [
+                    {
+                      "name": "paramName",
+                      "type": "ParamType",
+                      "modifiers": ["ref", "out", "params"]
+                    }
+                  ],
+                  "visibility": "public|private|protected|internal",
+                  "modifiers": ["static", "virtual", "override", "abstract", "async"]
+                }
+              ],
+              "constructors": [
+                {
+                  "parameters": [
+                    {
+                      "name": "paramName",
+                      "type": "ParamType"
+                    }
+                  ],
+                  "visibility": "public|private|protected|internal",
+                  "modifiers": ["static"]
+                }
+              ],
+              "events": [
+                {
+                  "name": "EventName",
+                  "type": "DelegateType",
+                  "visibility": "public|private|protected|internal"
+                }
+              ]
+            },
+            "relationships": [
+              {
+                "target": "OtherComponentName",
+                "type": "inheritance|implementation|composition|aggregation|dependency|association|nested",
+                "cardinality": "1|0..1|1..*|*",
+                "description": "brief description of relationship context",
+                "source_member": "field_or_method_name_if_applicable"
+              }
+            ]
+          }
+        ]
+      }
     }
-  }
-},
+  },
 "uml_synthesize": {
-  "role": "You are a UML generation expert. Your task is to create a PlantUML class diagram from a JSON array where each object represents the structure of a file. Respond ONLY with the PlantUML code, without any markdown formatting around it.",
-  "instructions": [
-    "You will receive a JSON array. Each object in the array represents a single source file and contains its path and a list of its components (classes, interfaces, enums).",
-    "Your task is to generate a complete PlantUML class diagram from this data.",
-    "Follow these steps carefully:",
-    "1. Declare ALL components from every file using the correct syntax: 'class \"Name\"', 'interface \"Name\"', or 'enum \"Name\"'.",
-    "2. Then, iterate through all relationships and draw arrows using the following rules:",
-    "   - 'dependency': 'Target <.. Source'",
-    "   - 'composition': 'Target *-- Source'",
-    "   - 'inheritance': 'Target <|-- Source'",
-    "   - 'implementation': 'Target <|.. Source'",
-    "   - 'aggregation': 'Target o-- Source'",
-    "   - 'attribute': 'Target <-- Source : has'",
-    "3. If a component is referenced as a relationship target but was not declared in any component list, STILL declare it with its name and an appropriate type (default to 'class' if unknown).",
-    "4. Do NOT include methods or attributes, only class/interface/enum names and relationships.",
-    "5. Begin with '@startuml' and end with '@enduml'. Do NOT include any other text or markdown formatting."
-  ]
+    "role": "You are an expert PlantUML architect responsible for generating comprehensive, publication-quality class diagrams that accurately represent complex software architectures. Your output must be complete, visually organized, and include all structural details from the input data.",
+   "instructions": [
+    "COMPLETENESS: Every component, member, and relationship must be represented",
+      "ACCURACY: All UML syntax must be correct and semantically meaningful", 
+      "VISUAL_CLARITY: Use packages, colors, and layout hints for optimal readability",
+      "PROFESSIONAL_QUALITY: Generate diagrams suitable for documentation and presentations",
+      "INPUT PROCESSING: Process the complete JSON array representing the entire project structure. Each element contains file path and detailed component information.",
+      
+      "NAMESPACE/PACKAGE ORGANIZATION: ",
+      "  - Extract namespace/folder information from file paths",
+      "  - Create PlantUML packages to group related components",
+      "  - Use hierarchical package structure when applicable (e.g., 'package Entity {', 'package Business.Services {')",
+      
+      "COMPONENT DECLARATION: For each component, generate complete UML class/interface declarations:",
+      "  - Use appropriate UML keywords: class, interface, enum, abstract class",
+      "  - Include full component name with namespace disambiguation if needed",
+      "  - Apply proper visibility symbols: +public, -private, #protected, ~internal",
+      "  - Include modifiers: {abstract}, <<interface>>, <<enumeration>>, <<static>>",
+      
+      "MEMBER REPRESENTATION: Include ALL members with complete signatures:",
+      "  - Fields: 'visibility name : type {modifiers}'",
+      "  - Properties: 'visibility PropertyName : type {get/set}'", 
+      "  - Methods: 'visibility methodName(param1: type1, param2: type2) : returnType {modifiers}'",
+      "  - Constructors: 'visibility ComponentName(parameters)'",
+      "  - Static members: underline or {static} notation",
+      "  - Abstract/virtual members: italics or {abstract}/{virtual} notation",
+      
+      "RELATIONSHIP MAPPING: Convert all relationships to proper PlantUML arrows:",
+      "  - inheritance: 'Parent <|-- Child' (solid line with hollow triangle)",
+      "  - implementation: 'Interface <|.. Implementation' (dashed line with hollow triangle)", 
+      "  - composition: 'Owner *-- Component : description' (solid line with filled diamond)",
+      "  - aggregation: 'Container o-- Element : description' (solid line with hollow diamond)",
+      "  - association: 'ClassA --> ClassB : description' (solid arrow)",
+      "  - dependency: 'Client ..> Service : <<uses>>' (dashed arrow)",
+      "  - Include cardinality when available: 'ClassA \"1\" --> \"*\" ClassB'",
+      
+      "ADVANCED UML FEATURES:",
+      "  - Use stereotypes for special types: <<service>>, <<entity>>, <<repository>>",
+      "  - Apply colors for different layers: entity #lightblue, business #lightgreen, presentation #lightyellow",
+      "  - Include notes for important design decisions: note right of ClassName : Important note",
+      "  - Use layout hints: !define DIRECTION top to bottom direction",
+      
+      "DISAMBIGUATION STRATEGY: When identical class names exist across files:",
+      "  - Use file-based suffixes: 'ClassName_FileName'",
+      "  - Or use full namespace qualification: 'Namespace.ClassName'",
+      "  - Ensure all relationships reference the correct disambiguated names",
+      
+      "MISSING REFERENCE HANDLING: For relationships targeting undeclared components:",
+      "  - Declare missing types as lightweight classes: 'class MissingType <<external>>'",
+      "  - Place in appropriate package or create 'External' package",
+      "  - Use different styling to indicate external dependencies",
+      
+      "VISUAL ENHANCEMENTS:",
+      "  - Add title: 'title \"Project Architecture Overview\"'",
+      "  - Use skinparam for professional appearance",
+      "  - Group related classes in packages",
+      "  - Apply consistent color schemes",
+      "  - Include legend if using custom stereotypes or colors",
+      
+      "OUTPUT STRUCTURE:",
+      "```",
+      "@startuml",
+      "!theme plain",
+      "skinparam classAttributeIconSize 0",
+      "skinparam classFontStyle bold",
+      "title \"Complete System Architecture\"",
+      "",
+      "' === Package Declarations ===",
+      "package \"Entity Layer\" #lightblue {",
+      "  class Book {",
+      "    -string isbn",
+      "    +string Title",
+      "    +string Author", 
+      "    -bool isLoaned",
+      "    +Book(isbn: string, title: string, author: string)",
+      "    +void MarkAsLoaned()",
+      "    +void MarkAsReturned()",
+      "    +bool IsLoaned {get}",
+      "  }",
+      "}",
+      "",
+      "' === Relationships ===", 
+      "LoanRecord *-- Book : owns",
+      "LoanRecord *-- Member : owns",
+      "LoanService \"1\" --> \"*\" LoanRecord : manages",
+      "",
+      "@enduml",
+      "```",
+       "Every component from input JSON must appear in the diagram",
+      "All relationships must be properly drawn with correct arrow types",
+      "Member signatures must be complete and properly formatted",
+      "Package organization should reflect logical architecture layers",
+      "Diagram must be syntactically valid PlantUML",
+      "Visual layout should be clean and professional",
+      "No information from the input should be omitted or simplified"
+ 
+    ]
 }
 }

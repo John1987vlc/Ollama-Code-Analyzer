@@ -11,8 +11,19 @@
   "command.generateUnitTest.title": "Generar prueba unitaria",
   "command.findDuplicateLogic.title": "Detectar lógica duplicada",
   "command.generateUmlDiagram.title": "Generar Diagrama UML del proyecto",
+  "command.generateUmlDiagram.generationFailed": "No se pudo generar el diagrama UML. Por favor, revisa la respuesta del modelo Ollama.",
   "command.configureLanguage.title": "Configurar Idioma de Salida",
   "command.checkProjectStandards.title": "Validar estándares del proyecto",
-  "config.outputLanguage.description": "Idioma para las respuestas de la IA (comentarios, explicaciones, etc.).",
-  "config.baseUrl.description": "URL base del servicio Ollama"
+  "config.baseUrl.description": "URL base del servicio de Ollama",
+  "webview.panel.title": "Respuesta de Ollama",
+  "webview.panel.loading": "Contactando con Ollama...",
+  "webview.panel.umlLoading": "Analizando archivos para generar diagrama UML...",
+  "webview.panel.codeCopied": "¡Código copiado al portapapeles!",
+  "webview.panel.thinking": "Ver Pensamiento del Modelo",
+  "webview.panel.umlProgress": "Analizados {0} de {1} archivos.",
+  "webview.panel.analyzedFiles": "Archivos Analizados:",
+  "webview.panel.currentlyAnalyzing": "Actualmente analizando...",
+  "webview.panel.remainingFiles": "{0} archivos pendientes.",
+  "webview.panel.loaderAriaLabel": "Cargando",
+  "webview.script.copied": "¡Copiado!"
 }

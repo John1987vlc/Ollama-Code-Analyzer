@@ -38,7 +38,15 @@ export class CodeAnalyzer {
         this.promptingService = new PromptingService();
     }
 
-   
+    async analyzeProjectStructure(): Promise<any[]> {
+        // Placeholder: Implementar lógica real para analizar la estructura del proyecto
+        // Esto podría implicar listar archivos, leer contenidos, etc.
+        return [
+            { path: 'file1.ts', content: 'class User {}' },
+            { path: 'file2.ts', content: 'class Order {}' }
+        ];
+    }
+
     async analyzeDocument(document: vscode.TextDocument, modelOverride?: string): Promise<AnalysisResult | null> {
         const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer');
         // [CORREGIDO] Se elimina el fallback y se usa el override o el de la config

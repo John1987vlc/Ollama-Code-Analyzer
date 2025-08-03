@@ -1,24 +1,38 @@
 {
   "name": "ollama-code-analyzer",
   "displayName": "Ollama Code Analyzer",
-  "description": "Analiza tu código en tiempo real usando Ollama y modelos de IA locales",
-  "publisher": "ollama-code-analyzer-Gemma3n-Gitea",
+  "description": "Your private AI co-pilot for code analysis. Use powerful local model Gemma3n through Ollama to analyze, refactor, explain, and generate code without ever sending it to the cloud. Privacy-first, offline-capable, and fully integrated into your VS Code workflow.",
+  "publisher": "ollama-code-analyzer-Gemma3n",
   "version": "1.0.0",
   "icon": "images/icon.png",
   "engines": {
     "vscode": "^1.74.0"
   },
   "categories": [
-    "Other",
+    "Programming Languages",
     "Linters",
-    "Programming Languages"
+    "Machine Learning",
+    "Education",
+    "Other"
   ],
   "keywords": [
     "ollama",
     "ai",
+    "gemma",
+    "llama",
+    "local ai",
+    "privacy",
+    "security",
+    "offline",
     "code analysis",
-    "suggestions",
-    "local ai"
+    "linter",
+    "static analysis",
+    "refactoring",
+    "code generation",
+    "unit testing",
+    "explain code",
+    "UML",
+    "suggestions"
   ],
   "activationEvents": [
     "onLanguage:csharp",
@@ -36,52 +50,52 @@
       {
         "command": "ollamaCodeAnalyzer.analyzeCurrentDocument",
         "title": "%command.analyzeCurrentDocument.title%",
-        "category": "Gemma3n Analysis"
+        "category": "Ollama Code Analyzer"
       },
       {
         "command": "ollamaCodeAnalyzer.configureModel",
         "title": "%command.configureModel.title%",
-        "category": "Gemma3n Analysis"
+        "category": "Ollama Code Analyzer"
       },
       {
         "command": "ollamaCodeAnalyzer.generateCodeFromComment",
         "title": "%command.generateCodeFromComment.title%",
-        "category": "Gemma3n Analysis"
+        "category": "Ollama Code Analyzer"
       },
       {
         "command": "ollamaCodeAnalyzer.findSuggestions",
         "title": "%command.findSuggestions.title%",
-        "category": "Gemma3n Analysis"
+        "category": "Ollama Code Analyzer"
       },
       {
         "command": "ollamaCodeAnalyzer.conceptualRefactor",
         "title": "%command.conceptualRefactor.title%",
-        "category": "Gemma3n Analysis"
+        "category": "Ollama Code Analyzer"
       },
       {
         "command": "ollamaCodeAnalyzer.explainCode",
         "title": "%command.explainCode.title%",
-        "category": "Gemma3n Analysis"
+        "category": "Ollama Code Analyzer"
       },
       {
         "command": "ollamaCodeAnalyzer.checkCompanyStandards",
         "title": "%command.checkCompanyStandards.title%",
-        "category": "Gemma3n Analysis"
+        "category": "Ollama Code Analyzer"
       },
       {
         "command": "ollamaCodeAnalyzer.generateUnitTest",
         "title": "%command.generateUnitTest.title%",
-        "category": "Gemma3n Analysis"
+        "category": "Ollama Code Analyzer"
       },
       {
         "command": "ollamaCodeAnalyzer.findDuplicateLogic",
         "title": "%command.findDuplicateLogic.title%",
-        "category": "Gemma3n Analysis"
+        "category": "Ollama Code Analyzer"
       },
       {
         "command": "ollamaCodeAnalyzer.generateUmlDiagram",
         "title": "%command.generateUmlDiagram.title%",
-        "category": "Gemma3n Analysis"
+        "category": "Ollama Code Analyzer"
       },
       {
         "command": "ollamaCodeAnalyzer.configureLanguage",
@@ -151,6 +165,10 @@
         {
           "command": "ollamaCodeAnalyzer.checkProjectStandards",
           "group": "3_project@2"
+        },
+        {
+          "command": "ollamaCodeAnalyzer.configureModel",
+          "group": "4_configuration@1"
         }
       ]
     },
@@ -164,17 +182,8 @@
         },
         "ollamaCodeAnalyzer.model": {
           "type": "string",
-          "default": "codellama:7b",
-          "description": "El modelo de Ollama que se usará para el análisis y la generación de código."
-        },
-        "ollamaCodeAnalyzer.outputLanguage": {
-          "type": "string",
-          "default": "Español",
-          "enum": [
-            "Español",
-            "English"
-          ],
-          "description": "%config.outputLanguage.description%"
+          "default": "gemma3n:latest",
+          "description": "LLM Model used in ollama."
         },
         "ollamaCodeAnalyzer.supportedLanguages": {
           "type": "array",
@@ -183,50 +192,51 @@
             "javascript",
             "typescript",
             "python",
-            "java"
+            "java",
+            "sql"
           ],
-          "description": "Los lenguajes de programación que serán analizados por la extensión."
+          "description": "The programming languages that will be analyzed by the extension."
         },
         "ollamaCodeAnalyzer.maxLines": {
           "type": "number",
           "default": 2000,
-          "description": "El número máximo de líneas que un fichero puede tener para ser analizado."
+          "description": "The maximum number of lines a file can have to be analyzed."
         },
         "ollamaCodeAnalyzer.analyzeOnOpen": {
           "type": "boolean",
-          "default": true,
-          "description": "Analizar un fichero automáticamente cuando se abre."
+          "default": false,
+          "description": "Automatically analyze a file when it is opened."
         },
         "ollamaCodeAnalyzer.analyzeOnSave": {
           "type": "boolean",
-          "default": true,
-          "description": "Analizar un fichero automáticamente cuando se guarda."
+          "default": false,
+          "description": "Automatically analyze a file when it is saved."
         },
         "ollamaCodeAnalyzer.autoAnalyze": {
           "type": "boolean",
           "default": false,
-          "description": "Analizar un fichero automáticamente mientras escribes."
+          "description": "Automatically analyze a file as you type."
         },
         "ollamaCodeAnalyzer.timeout": {
           "type": "number",
           "default": 45000,
-          "description": "Tiempo máximo de espera (en ms) para las respuestas de Ollama."
+          "description": "Maximum wait time (in ms) for responses from Ollama."
         }
       }
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run build",
+    "clean": "npx rimraf logs out && del /q *.vsix 2>NUL",
     "generate-nls": "node ./scripts/generate-nls.js",
-    "build": "npm run generate-nls && tsc -p ./ && cpx \"src/prompts/**/*.json\" out/prompts && cpx \"src/ui/media/*\" out/media && cpx \"src/internationalization/**/*.json\" out/internationalization",
     "compile": "npm run generate-nls && tsc -p ./",
-    "watch": "npm-run-all -p watch:*",
+    "build": "npm run generate-nls && tsc -p ./ && cpx \"src/prompts/**/*.json\" out/prompts && cpx \"src/ui/media/*\" out/media && cpx \"src/internationalization/**/*.json\" out/internationalization",
+    "vscode:prepublish": "npm run clean && npm run build",
     "watch:tsc": "tsc -watch -p ./",
-    "watch:media": "cpx \"src/media/*\" out/media --watch",
+    "watch:media": "cpx \"src/ui/media/*\" out/media --watch",
+    "watch": "npm-run-all -p watch:tsc watch:media",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
-    "test": "vscode-test",
-    "package:clean": "npm run build && vsce package"
+    "test": "vscode-test"
   },
   "devDependencies": {
     "@types/markdown-it": "^14.1.2",
@@ -258,6 +268,7 @@
     "@kazumatu981/markdown-it-kroki": "^1.3.6",
     "@vscode/test-cli": "^0.0.11",
     "markdown-it": "^14.1.0",
-    "node-fetch": "^2.7.0"
+    "node-fetch": "^2.7.0",
+    "node-plantuml": "^0.9.0"
   }
 }
