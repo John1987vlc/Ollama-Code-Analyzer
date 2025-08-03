@@ -125,7 +125,7 @@ Settings in **VS Code → Settings → Extensions → Ollama Code Analyzer**:
     <!-- explainCode -->
     <div>
       <p style="text-align:center;">
-        <img src="./images/explainCode.gif" alt="Explain Code demo" width="400" style="display:block; margin:0 auto;">
+        <img src="./images/explainCode.gif" alt="Explain Code demo" width="100%" style="display:block; margin:0 auto;">
       </p>
       <p><strong>Explain Code:</strong> Automatically breaks down and explains sections of source code, helping developers understand complex logic or unfamiliar codebases quickly.</p>
     </div>
