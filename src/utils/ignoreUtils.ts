@@ -4,7 +4,7 @@
  * proyecto, combinando patrones por defecto, del `.gitignore` y de la
  * configuración de VS Code.
  */
-// src/utils/ignoreUtils.ts
+
 import * as vscode from 'vscode';
 import * as fs from 'fs/promises';
 import * as path from 'path';

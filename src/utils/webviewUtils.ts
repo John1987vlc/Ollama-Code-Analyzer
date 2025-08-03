@@ -1,5 +1,3 @@
-// src/utils/webviewUtils.ts
-
 import { ParsedWebviewContent } from '../ui/webviewsTypes';
 
 /**

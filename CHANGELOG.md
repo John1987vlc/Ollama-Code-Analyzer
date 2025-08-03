@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.0.0] - 2025-08-02
+## [1.0.0] - 2025-08-03
 - Initial release of Ollama Code Analyzer!
 
 ### Added

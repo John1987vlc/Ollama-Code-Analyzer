@@ -1,5 +1,3 @@
-// src/ui/webviewsContent.ts (VERSIÓN CON LOADER DEL LOGO)
-
 import * as vscode from 'vscode';
 import { getNonce, escape } from '../utils/webviewUtils';
 import { ParsedWebviewContent, UmlProgressState } from './webviewsTypes';

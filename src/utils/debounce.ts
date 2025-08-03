@@ -4,7 +4,6 @@
  * transcurrido un tiempo determinado sin que se vuelva a llamar,
  * optimizando eventos frecuentes como el tecleo del usuario.
  */
-// src/utils/debounce.ts
 
 /**
  * Crea una versión "debounced" de una función que retrasa su invocación

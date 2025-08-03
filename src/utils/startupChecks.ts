@@ -4,7 +4,6 @@
  * y muestra notificaciones al usuario si algo no está configurado
  * o no funciona correctamente.
  */
-// src/utils/startupChecks.ts
 
 import * as vscode from 'vscode';
 import { OllamaService } from '../api/OllamaService';

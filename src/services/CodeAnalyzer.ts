@@ -4,7 +4,7 @@
  * comunicación con OllamaService y la presentación de los resultados
  * en forma de diagnósticos en el editor.
  */
-// src/services/CodeAnalyzer.ts
+
 import * as vscode from 'vscode';
 import { OllamaService } from '../api/OllamaService';
 import { PromptingService } from './PromptingService';

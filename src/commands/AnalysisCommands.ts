@@ -3,7 +3,7 @@
  * Incluye comandos para analizar el documento actual, encontrar sugerencias de
  * refactorización, explicar código y validar estándares.
  */
-// src/commands/AnalysisCommands.ts - Comandos de análisis
+
 import * as vscode from 'vscode';
 import { CoreExtensionContext } from '../context/ExtensionContext';
 import { UnifiedResponseWebview } from '../ui/webviews';

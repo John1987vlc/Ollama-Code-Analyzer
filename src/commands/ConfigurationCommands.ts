@@ -3,7 +3,7 @@
  * Permite al usuario configurar el modelo de Ollama y el idioma de salida
  * a través de la paleta de comandos.
  */
-// src/commands/ConfigurationCommands.ts
+
 import * as vscode from 'vscode';
 import { CoreExtensionContext } from '../context/ExtensionContext';
 import { I18n } from '../internationalization/i18n';

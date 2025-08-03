@@ -9,7 +9,7 @@ export default [{
     ecmaVersion: 2022,
     sourceType: "module",
     parserOptions: {
-      project: path.resolve("./tsconfig.json"), // ✅ Indica dónde está el tsconfig
+      project: path.resolve("./tsconfig.json"), 
       tsconfigRootDir: path.resolve("."),
     },
   },

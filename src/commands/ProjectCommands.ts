@@ -1,3 +1,7 @@
+/**
+ * @file Registra los comandos de revisión del código del proyecto y de la generación del diagrama.
+ */
+
 import * as vscode from 'vscode';
 import { CoreExtensionContext } from '../context/ExtensionContext';
 import { UnifiedResponseWebview } from '../ui/webviews';

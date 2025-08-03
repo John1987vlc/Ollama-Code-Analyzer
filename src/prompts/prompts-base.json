@@ -308,7 +308,6 @@
       "Diagram must be syntactically valid PlantUML",
       "Visual layout should be clean and professional",
       "No information from the input should be omitted or simplified"
- 
     ]
 }
 }

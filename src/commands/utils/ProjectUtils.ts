@@ -3,8 +3,10 @@
  * Contiene funciones para buscar archivos en el workspace, obtener las extensiones
  * de un lenguaje y manejar patrones de exclusión.
  */
+
 import * as vscode from 'vscode';
 import { getExcludePattern } from '../../utils/ignoreUtils';
+
 
 export function getExtensionsForLanguage(languageId: string): string[] {
     const languageExtensionMap: Record<string, string[]> = {

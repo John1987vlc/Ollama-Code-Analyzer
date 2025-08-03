@@ -4,7 +4,7 @@
     "extension.description": "Analyze your code in real time using local AI models with Ollama",
     "command.analyzeCurrentDocument.title": "Analyze Current Document",
     "command.configureModel.title": "Configure Model",
-    "command.generateCodeFromComment.title": "Generate code from comment (///, #, /*...*/)",
+    "command.generateCodeFromComment.title": "Generate code from comment block (///, #, /*...*/)",
     "command.findSuggestions.title": "Find refactoring suggestions",
     "command.conceptualRefactor.title": "Propose intelligent refactoring",
     "command.explainCode.title": "Explain selected code",

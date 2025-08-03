@@ -4,6 +4,7 @@
  * estandarizar la forma en que los comandos interactúan con la UI (Webviews)
  * y manejan los estados de carga y los errores.
  */
+
 import * as vscode from 'vscode';
 import { UnifiedResponseWebview } from '../../ui/webviews';
 import { I18n } from '../../internationalization/i18n';
@@ -14,8 +15,6 @@ export async function executeCommandWithWebview(
     loadingTitleKey: string,
     serviceCall: () => Promise<{ prompt: string, response: string | null } | null>
 ) {
-    // --- AÑADIDO: Forzamos la visibilidad del Logger ---
-    Logger.show(); // <-- Muestra el panel de "Output"
     Logger.log(`Ejecutando comando: ${loadingTitleKey}`); // <-- Escribe en el log
 
     const config = vscode.workspace.getConfiguration('ollamaCodeAnalyzer');
@@ -46,9 +45,7 @@ export async function executeCommandWithWebview(
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : I18n.t('error.unknown');
 
-        // --- AÑADIDO: Log detallado del error ---
         Logger.error(`Error ejecutando el comando '${loadingTitleKey}':`, error);
-        Logger.show(); // <-- Asegúrate de que el panel es visible si hay un error
 
         if (UnifiedResponseWebview.currentPanel) {
             UnifiedResponseWebview.currentPanel.showResponse(`${I18n.t('error.executingCommand')}: ${errorMessage}`);

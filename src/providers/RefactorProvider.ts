@@ -3,6 +3,7 @@
  * Implementa `vscode.CodeActionProvider` para ofrecer sugerencias de
  * refactorización directamente en el editor como "Quick Fixes" (bombilla).
  */
+
 import * as vscode from 'vscode';
 import { CoreExtensionContext } from '../context/ExtensionContext';
 

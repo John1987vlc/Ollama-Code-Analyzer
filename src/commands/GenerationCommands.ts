@@ -3,7 +3,7 @@
  * Proporciona funcionalidades para generar código a partir de comentarios
  * y para crear pruebas unitarias para el código seleccionado.
  */
-// src/commands/GenerationCommands.ts - Comandos de generación
+
 import * as vscode from 'vscode';
 import { CoreExtensionContext } from '../context/ExtensionContext';
 import { I18n } from '../internationalization/i18n';

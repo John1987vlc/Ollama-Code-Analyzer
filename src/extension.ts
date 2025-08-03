@@ -1,5 +1,3 @@
-// src/extension.ts
-
 import * as vscode from 'vscode';
 import { CoreExtensionContext } from './context/ExtensionContext';
 import { registerAllCommands } from './commands';

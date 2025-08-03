@@ -4,7 +4,7 @@
  * dinámicamente, insertando el código, el idioma y otras variables
  * necesarias para cada tipo de solicitud a Ollama.
  */
-// src/services/PromptingService.ts
+
 import * as vscode from 'vscode';
 import * as fs from 'fs/promises';
 import * as path from 'path';

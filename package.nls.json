@@ -25,5 +25,5 @@
   "webview.panel.currentlyAnalyzing": "Currently analyzing...",
   "webview.panel.remainingFiles": "{0} files remaining.",
   "webview.panel.loaderAriaLabel": "Loading",
-  "webview.script.copied": "Copied!"
+  "webview.script.copied": "Copied"
 }

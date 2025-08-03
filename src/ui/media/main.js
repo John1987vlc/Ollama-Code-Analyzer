@@ -1,4 +1,3 @@
-// src/media/main.js (NUEVA VERSIÓN CON ESTILO DE SEVERIDAD)
 (function() {
     const vscode = acquireVsCodeApi();
 

@@ -3,7 +3,6 @@
  * Contiene funciones para normalizar rutas y obtener la ruta relativa
  * de un archivo dentro del espacio de trabajo.
  */
-// src/utils/pathUtils.ts 
 
 import * as vscode from 'vscode';
 import * as path from 'path';

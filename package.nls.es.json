@@ -25,5 +25,5 @@
   "webview.panel.currentlyAnalyzing": "Actualmente analizando...",
   "webview.panel.remainingFiles": "{0} archivos pendientes.",
   "webview.panel.loaderAriaLabel": "Cargando",
-  "webview.script.copied": "¡Copiado!"
+  "webview.script.copied": "Copiado"
 }

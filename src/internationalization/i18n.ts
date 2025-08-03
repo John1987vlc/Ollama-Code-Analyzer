@@ -1,4 +1,7 @@
-// src/internationalization/i18n.ts
+/**
+ * @file Gestion de multiples idiomas
+ */
+
 
 import * as vscode from 'vscode';
 import * as fs from 'fs';

@@ -122,7 +122,6 @@ Settings in **VS Code → Settings → Extensions → Ollama Code Analyzer**:
 ---
 
   <div style="display:grid; gap:2rem; max-width:800px; margin:0 auto;">
-    <!-- explainCode -->
     <div>
       <p style="text-align:center;">
         <img src="./images/explainCode.gif" alt="Explain Code demo" width="100%" style="display:block; margin:0 auto;">

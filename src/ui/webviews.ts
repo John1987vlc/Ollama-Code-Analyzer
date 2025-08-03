@@ -1,4 +1,3 @@
-// src/ui/webviews.ts
 
 import * as vscode from 'vscode';
 import MarkdownIt from 'markdown-it';
