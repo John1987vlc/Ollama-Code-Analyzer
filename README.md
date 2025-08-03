@@ -74,7 +74,7 @@ Download from [ollama.com](https://ollama.com/download) for your OS.
 
 ### 3️⃣ Download a Model
 ```bash
-# Example: Pull the Gemma 7B model
+# Example: Pull the Gemma3n latest model
 ollama pull gemma3n:latest
 ```
 > 💡 You can also try `gemma3n:e2b` or other coding-optimized models.
