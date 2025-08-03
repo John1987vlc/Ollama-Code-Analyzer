@@ -6,7 +6,7 @@
 ![Offline](https://img.shields.io/badge/Offline-Yes-green)  
 ![Privacy](https://img.shields.io/badge/Privacy-100%25-orange)  
 
-![Logo](./images/icon.png){width=200px}
+<img src="./images/icon.png" alt="Logo" width="200">
 
 Run AI-powered code analysis directly inside your editor — **fully offline, private, and secure**.  
 Ollama Code Analyzer uses on-device AI models (like `gemma3n`) via [Ollama](https://ollama.com/) to help you:  
