@@ -121,6 +121,69 @@ Settings in **VS Code → Settings → Extensions → Ollama Code Analyzer**:
 ## 📸 Screenshots & Demo
 ---
 
+  <div style="display:grid; gap:2rem; max-width:800px; margin:0 auto;">
+    <!-- explainCode -->
+    <div>
+      <p style="text-align:center;">
+        <img src="./images/explainCode.gif" alt="Explain Code demo" width="400" style="display:block; margin:0 auto;">
+      </p>
+      <p><strong>Explain Code:</strong> Automatically breaks down and explains sections of source code, helping developers understand complex logic or unfamiliar codebases quickly.</p>
+    </div>
+    <div>
+      <p style="text-align:center;">
+        <img src="./images/inteligentRefactoring.gif" alt="Intelligent Refactoring demo" width="400" style="display:block; margin:0 auto;">
+      </p>
+      <p><strong>Intelligent Refactoring:</strong> Suggests smarter, context-aware refactorings to improve code structure, readability, and maintainability without changing behavior.</p>
+    </div>
+    <div>
+      <p style="text-align:center;">
+        <img src="./images/duplicateLogic.gif" alt="Duplicate Logic detection demo" width="400" style="display:block; margin:0 auto;">
+      </p>
+      <p><strong>Duplicate Logic:</strong> Detects repeating or redundant logic across the codebase so you can consolidate and DRY-up your implementation.</p>
+    </div>
+    <div>
+      <p style="text-align:center;">
+        <img src="./images/unitTest.gif" alt="Unit Test generation/demo" width="400" style="display:block; margin:0 auto;">
+      </p>
+      <p><strong>Unit Test:</strong> Demonstrates automated or assisted generation/execution of unit tests to ensure code correctness and guard against regressions.</p>
+    </div>
+    <div>
+      <p style="text-align:center;">
+        <img src="./images/projectUMLDiagram.gif" alt="Project UML Diagram generation demo" width="400" style="display:block; margin:0 auto;">
+      </p>
+      <p><strong>Project UML Diagram:</strong> Visualizes the structure of your project by generating UML diagrams from code, aiding in architecture comprehension and documentation.</p>
+    </div>
+    <div>
+      <p style="text-align:center;">
+        <img src="./images/projectStandard.gif" alt="Project Standard compliance demo" width="400" style="display:block; margin:0 auto;">
+      </p>
+      <p><strong>Project Standard:</strong> Checks code against defined project standards and conventions, highlighting deviations to enforce consistency.</p>
+    </div>
+    <div>
+      <p style="text-align:center;">
+        <img src="./images/codeFromComment.gif" alt="Code from Comment demo" width="400" style="display:block; margin:0 auto;">
+      </p>
+      <p><strong>Code From Comment:</strong> Generates implementation code based on developer comments or specifications, speeding up prototyping and reducing boilerplate.</p>
+    </div>
+    <div>
+      <p style="text-align:center;">
+        <img src="./images/refactoringSuggestions.gif" alt="Refactoring Suggestions demo" width="400" style="display:block; margin:0 auto;">
+      </p>
+      <p><strong>Refactoring Suggestions:</strong> Offers targeted recommendations to improve code quality, such as simplifying logic, renaming for clarity, or extracting methods.</p>
+    </div>
+    <div>
+      <p style="text-align:center;">
+        <img src="./images/validateCompanyStandard.gif" alt="Validate Company Standard demo" width="400" style="display:block; margin:0 auto;">
+      </p>
+      <p><strong>Validate Company Standard:</strong> Ensures code complies with organizational or regulatory standards, flagging violations before they reach production.</p>
+    </div>
+    <div>
+      <p style="text-align:center;">
+        <img src="./images/analizeDocument.gif" alt="Analyze Document demo" width="400" style="display:block; margin:0 auto;">
+      </p>
+      <p><strong>Analyze Document:</strong> Performs analysis on documentation or code comments to extract actionable insights, detect inconsistencies, or summarize content.</p>
+    </div>
+  </div>
 ---
 
 ## 🛠 Troubleshooting
