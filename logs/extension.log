@@ -16060,3 +16060,5 @@
 }
 [2025-08-03T15:52:10.883Z] [INFO] _updateWebview called with: isLoading=true, isUmlGeneration=true
 [2025-08-03T15:52:10.886Z] [INFO] _updateWebview called with: isLoading=false, isUmlGeneration=false
+[2025-08-03T16:15:55.952Z] [INFO] Activating extensíon "Ollama Code Analyzer"...
+[2025-08-03T16:15:58.823Z] [INFO] Extensión "Ollama Code Analyzer" running.
