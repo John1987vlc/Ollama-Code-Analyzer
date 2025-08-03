@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gemma 3n code assistant</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="./ollama.css">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+<body class="bg-white text-gray-800 font-sans leading-relaxed">
+  <!-- Hero -->
+  <section class="bg-gradient-to-br from-blue-600 to-blue-400 text-white py-12 px-6 shadow-md">
+    <div class="max-w-5xl mx-auto flex flex-col md:flex-row items-center gap-10">
+      <img id=img1 src="../IMG/1.png" alt="">
+      <div>
+        <h1 class="text-4xl font-extrabold mb-2">Gemma 3n code assistant</h1>
+        <p class="text-lg">I'm here to help you!</p>
+        <div class="mt-4 flex gap-3">
+          <button class="bg-white text-blue-600 font-semibold px-4 py-2 rounded-lg shadow hover:bg-blue-100 transition"><a href="https://github.com/John1987vlc/Ollama-Code-Analyzer">Install</a></button>
+          <button class="bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-800 transition"><a href="https://github.com/John1987vlc/Ollama-Code-Analyzer/blob/main/README.md">See more</a></button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contenido Principal -->
+  <main class="max-w-5xl mx-auto px-6 py-12">
+    <!-- Advertencia -->
+    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-4 rounded-lg shadow mb-8">
+      <strong>⚠️ Note:</strong> This app is still in development.
+    </div>
+
+    <!-- Tabla de Contenidos -->
+    <nav class="mb-10">
+      <h2 class="text-2xl font-bold mb-3">Table of Contents</h2>
+      <ul class="space-y-2 text-blue-600 font-medium">
+        <li><a href="#features" class="hover:underline"><i class="ph ph-check-circle mr-2"></i>About</a></li>
+        <li><a href="#features" class="hover:underline"><i class="ph ph-check-circle mr-2"></i>Features</a></li>
+        <li><a href="#usage" class="hover:underline"><i class="ph ph-play-circle mr-2"></i>How to use it?</a></li>
+        <li><a href="#faq" class="hover:underline"><i class="ph ph-question mr-2"></i>Frequently Asked Questions</a></li>
+        <li><a href="#version" class="hover:underline"><i class="ph ph-clock mr-2"></i>Version</a></li>
+      </ul>
+    </nav>
+
+    <!-- Secciones -->
+    <section id="features" class="mb-12">
+      <h3 class="text-xl font-bold mb-4" id="#features">About</h3>
+      <div class="bg-blue-50 p-5 rounded-lg shadow hover:shadow-md transition">
+          <h4 class="font-semibold mb-2">Hello, I'm Gemma 3n code assistant! </h4>
+          <p>Hello, I’m Gemma 3n, your ultimate code assistant! Experience cutting-edge AI-powered code analysis directly inside Visual Studio Code — completely local, fully private, and incredibly. Say goodbye to cloud uploads and security worries, and hello to seamless, lightning-speed coding assistance that helps you write cleaner, smarter, and more efficient code. Elevate your development workflow with Gemma 3n and unlock your full coding potential today!</p>
+        </div>
+        <br>
+      <h3 class="text-xl font-bold mb-4" id="#features">Features</h3>
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="bg-blue-50 p-5 rounded-lg shadow hover:shadow-md transition">
+          <h4 class="font-semibold mb-2">1. Validates company standards</h4>
+          <p>Analyze your code to ensure it complies with the standards and best practices established by your organization, helping maintain consistency, quality, and style across all projects.</p>
+        </div>
+        <div class="bg-blue-50 p-5 rounded-lg shadow hover:shadow-md transition">
+          <h4 class="font-semibold mb-2">2. Generate code from comment</h4>
+          <p>Allows you to automatically create code blocks from instructions written in special comments, speeding up development and reducing manual errors.</p>
+        </div>
+        <div class="bg-blue-50 p-5 rounded-lg shadow hover:shadow-md transition">
+          <h4 class="font-semibold mb-2">3. Suggests intelligent refactoring</h4>
+          <p>Analyzes the selected code block and suggests refactoring based on the code’s logic and purpose, clearly explaining its intent and proposing improvements to optimize readability, performance, and maintainability.
+
+</p>
+        </div>
+        <div class="bg-blue-50 p-5 rounded-lg shadow hover:shadow-md transition">
+          <h4 class="font-semibold mb-2">4. Generates unit test</h4>
+          <p>Automatically creates a unit test for the selected code block, making it easier to verify correct functionality, improve software quality, and speed up the testing process.</p>
+        </div>
+        <div class="bg-blue-50 p-5 rounded-lg shadow hover:shadow-md transition">
+          <h4 class="font-semibold mb-2">5. Explains selected code</h4>
+          <p>Provides a clear, detailed explanation of the functionality and purpose of the selected code snippet, making it easier to understand and helping resolve questions quickly.</p>
+        </div>
+        <div class="bg-blue-50 p-5 rounded-lg shadow hover:shadow-md transition">
+          <h4 class="font-semibold mb-2">6. Validate project standards</h4>
+          <p>Analyzes your code to identify issues, bad practices, and inconsistencies that could impact its functionality or quality, allowing you to fix them quickly and maintain clean, efficient code.</p>
+        </div>
+        <div class="bg-blue-50 p-5 rounded-lg shadow hover:shadow-md transition">
+          <h4 class="font-semibold mb-2">7. UML Diagrams</h4>
+          <p>Generates clear, detailed visual representations of your project’s overall structure using PlantUML, making it easier to understand the architecture, component relationships, and system flow.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="usage" class="mb-12">
+      <h3 class="text-xl font-bold mb-4" id="#usage">How to use it?</h3>
+      <div class="bg-blue-50 p-5 rounded-lg shadow hover:shadow-md transition">
+        <h4 class="font-semibold mb-2">1. Company Standards Validation</h4>
+        <p><b>Command: </b>"Validate Company Standards"</p>
+      </div>
+      <code class="bg-gray-100 p-2 rounded text-sm"><b>Action:</b>The user selects a file or code block → right-clicks → chooses the 'Validate Company Standards' option → Ollama analyzes and responds with improvement suggestions aligned with the defined standards.</code>
+      <br><br>
+      <div class="bg-blue-50 p-5 rounded-lg shadow hover:shadow-md transition">
+        <h4 class="font-semibold mb-2">2. Create methods from comments</h4>
+        <p><b>Command:</b>"Generate code from comment (///, #, / *...* /)"</p>
+      </div>
+      <code class="bg-gray-100 p-2 rounded text-sm"><b>Action:</b>The user selects a comment (e.g., // validate user data) → right-clicks → executes the command → 'Generate method from comment' → Ollama generates the snippet in any window.</code>
+      <br><br>
+      <div class="bg-blue-50 p-5 rounded-lg shadow hover:shadow-md transition">
+        <h4 class="font-semibold mb-2">3. Refactor code</h4>
+        <p><b>Command:</b>"Refactor"</p>
+      </div>
+      <code class="bg-gray-100 p-2 rounded text-sm"><b>Action:</b> Manually select a block → send it to Ollama by right-clicking and choosing the 'Refactor' command → it returns an improved version and explains the changes."</code>
+      <br><br>
+      <div class="bg-blue-50 p-5 rounded-lg shadow hover:shadow-md transition">
+        <h4 class="font-semibold mb-2">4. Generate unit tests</h4>
+        <p><b>Command:</b> "Generate unit test"</p>
+      </div>
+      <code class="bg-gray-100 p-2 rounded text-sm"><b>Action:</b> Select a function → run the 'Generate Unit Test' command by right-clicking → Ollama generates the test in your chosen framework (it can also detect it automatically).</code>
+      <br><br>
+      <div class="bg-blue-50 p-5 rounded-lg shadow hover:shadow-md transition">
+        <h4 class="font-semibold mb-2">5. Explain selected code</h4>
+        <p><b>Command:</b> "Explain selected code"</p>
+      </div>
+      <code class="bg-gray-100 p-2 rounded text-sm"><b>Action:</b>Select a line or block → run the 'Explain selected code' command by right-clicking → Ollama displays a natural language explanation (available in Spanish/English depending on your settings).
+      </code>
+    </section>
+
+    <section id="faq" class="mb-12">
+      <h3 class="text-xl font-bold mb-4" id="#faq">Frequently Asked Questions</h3>
+      <ul class="space-y-4">
+        <li>
+          <strong>Is it free?</strong><br />
+          Yes, Gemma 3n code assistant is completely free to use.
+        </li>
+        <li>
+          <strong>Does it work with React or Angular?</strong><br />
+          Yes, but for those cases, a specific server or additional configuration is recommended.
+        </li>
+      </ul>
+    </section>
+
+    <section id="version">
+      <h3 class="text-xl font-bold mb-4" id="#version">🕓 Version</h3>
+      <p>Current version: <strong>1.0.0</strong></p>
+      <p>Last updated on: <strong>August 08, 2025</strong></p>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-blue-100 text-blue-800 text-center py-6 mt-12 text-sm">
+    © 2025 Gemma 3n code assistant | Made with ❤️ by Authors: Jonatan Perales Gorba
+  </footer>
+</body>
+</html>
